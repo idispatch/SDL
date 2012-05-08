@@ -12,7 +12,7 @@
 
 int PLAYBOOK_AllocHWSurface(_THIS, SDL_Surface *surface)
 {
-	fprintf(stderr, "Allocate HW surface %08x\n", surface);
+	fprintf(stderr, "Allocate HW surface %08x\n", (unsigned int)surface);
 	if (surface->hwdata != NULL) {
 		fprintf(stderr, "Surface already has hwdata\n");
 		return -1;
@@ -66,7 +66,7 @@ fail1:
 
 void PLAYBOOK_FreeHWSurface(_THIS, SDL_Surface *surface)
 {
-	fprintf(stderr, "Free HW surface %08x\n", surface);
+	fprintf(stderr, "Free HW surface %08x\n", (unsigned int)surface);
 	if (surface->hwdata) {
 		screen_destroy_pixmap_buffer(surface->hwdata->pixmap);
 		screen_destroy_pixmap(surface->hwdata->pixmap);
@@ -88,7 +88,7 @@ void PLAYBOOK_UnlockHWSurface(_THIS, SDL_Surface *surface)
 
 int PLAYBOOK_FlipHWSurface(_THIS, SDL_Surface *surface)
 {
-	fprintf(stderr, "Flip HW surface %08x\n", surface);
+	fprintf(stderr, "Flip HW surface %08x\n", (unsigned int)surface);
 	// FIXME: This doesn't work properly yet. It flashes black, I think the new render buffers are wrong.
 	static int fullRect[] = {0, 0, 1024, 600};
 	//screen_flush_blits(_priv->screenContext, 0);

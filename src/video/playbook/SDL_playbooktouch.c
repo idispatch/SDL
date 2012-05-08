@@ -12,7 +12,7 @@
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
 #include "../../events/SDL_events_c.h"
-
+#include <unistd.h>
 #include "touchcontroloverlay.h"
 #include "SDL_playbookvideo.h"
 
@@ -215,14 +215,14 @@ void locateTCOControlFile(_THIS)
     const char *filename = "sdl-controls.xml";
     char *homeDir = SDL_getenv("HOME");
     char fullPath[512];
-    sprintf(fullPath, "%s/../%s", homeDir, filename);
-    int fd = fopen(fullPath, "r");
+    snprintf(fullPath, sizeof(fullPath), "%s/../%s", homeDir, filename);
+    FILE* fd = fopen(fullPath, "r");
     if (fd) {
         _priv->tcoControlsDir = SDL_malloc(strlen(fullPath) - strlen(filename) + 1);
         strncpy(_priv->tcoControlsDir, fullPath, strlen(fullPath) - strlen(filename));
         fclose(fd);
     } else {
-        sprintf(fullPath, "%s/../app/native/%s", homeDir, filename);
+        snprintf(fullPath, sizeof(fullPath), "%s/../app/native/%s", homeDir, filename);
         fd = fopen(fullPath, "r");
         if (fd) {
             _priv->tcoControlsDir = SDL_malloc(strlen(fullPath) - strlen(filename) + 1);
