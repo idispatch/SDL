@@ -65,6 +65,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
+#include <EGL/egl.h>
 
 #define PLAYBOOKVID_DRIVER_NAME "playbook"
 
@@ -488,7 +489,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 
 	locateTCOControlFile(this);
 	if (_priv->tcoControlsDir) {
-		initializeOverlay(this, screenWindow);	
+		initializeOverlay(this, screenWindow);
 	}
 
 	_priv->frontBuffer = windowBuffer[0];

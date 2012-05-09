@@ -20,12 +20,12 @@
     slouken@libsdl.org
 */
 
-#ifndef _SDL_config_minimal_h
-#define _SDL_config_minimal_h
+#ifndef _SDL_config_playbook_h
+#define _SDL_config_playbook_h
 
 #include "SDL_platform.h"
 
-/* This is the minimal configuration that can be used to build SDL */
+/* This is the PlayBook configuration that can be used to build SDL */
 
 #include <stdarg.h>
 #define HAVE_STDINT_H		1
@@ -102,7 +102,6 @@
 
 /* Enable the QNX NTO audio driver (src/audio/nto/\*.c) */
 #define SDL_AUDIO_DRIVER_QNXNTO 1
-//#define SDL_AUDIO_DRIVER_PLAYBOOK	1 // Anthony's experimental driver
 
 /* Enable the QNX cdrom driver (src/cdrom/dummy/\*.c) */
 #define SDL_CDROM_QNX	1
@@ -122,4 +121,4 @@
 /* Enable the dummy video driver (src/video/playbook/\*.c) */
 #define SDL_VIDEO_DRIVER_PLAYBOOK	1
 
-#endif /* _SDL_config_minimal_h */
+#endif /* _SDL_config_playbook_h */

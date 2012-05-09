@@ -31,10 +31,10 @@
 								<option id="com.qnx.qcc.option.compiler.security.282031137" name="Enhanced Security (-fstack-protector-all)" superClass="com.qnx.qcc.option.compiler.security" value="true" valueType="boolean"/>
 								<option id="com.qnx.qcc.option.compiler.defines.617448041" name="Defines (-D)" superClass="com.qnx.qcc.option.compiler.defines" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__PLAYBOOK__"/>
+									<listOptionValue builtIn="false" value="_DEBUG"/>
 									<listOptionValue builtIn="false" value="_FORTIFY_SOURCE=2"/>
 								</option>
 								<option id="com.qnx.qcc.option.compiler.includePath.808498740" name="Include Directories (-I)" superClass="com.qnx.qcc.option.compiler.includePath" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/emulate}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/TouchControlOverlay/public}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include}&quot;"/>
 									<listOptionValue builtIn="false" value="${QNX_TARGET}/../target-override/usr/include"/>
@@ -44,9 +44,7 @@
 							</tool>
 							<tool id="com.qnx.qcc.tool.assembler.1462539159" name="QCC Assembler" superClass="com.qnx.qcc.tool.assembler">
 								<option id="com.qnx.qcc.option.assembler.debug.1952318420" name="Debug (-g)" superClass="com.qnx.qcc.option.assembler.debug" value="true" valueType="boolean"/>
-								<option id="com.qnx.qcc.option.assembler.includePath.585587781" name="Include Directories (-I)" superClass="com.qnx.qcc.option.assembler.includePath" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/emulate}&quot;"/>
-								</option>
+								<option id="com.qnx.qcc.option.assembler.includePath.585587781" name="Include Directories (-I)" superClass="com.qnx.qcc.option.assembler.includePath"/>
 								<inputType id="com.qnx.qcc.inputType.assembler.1139960502" superClass="com.qnx.qcc.inputType.assembler"/>
 							</tool>
 							<tool id="com.qnx.qcc.tool.linker.1949612938" name="QCC Linker" superClass="com.qnx.qcc.tool.linker">
@@ -85,8 +83,11 @@
 				<externalSettings containerId="TouchControlOverlay;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/emulate"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/emulate/Device-Release"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/TouchControlOverlay"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/emulate/Device-Debug"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/TouchControlOverlay/Device-Debug"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="emulate"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="TouchControlOverlay"/>
 					</externalSetting>
 				</externalSettings>
 			</storageModule>
@@ -121,7 +122,7 @@
 									<listOptionValue builtIn="false" value="_FORTIFY_SOURCE=2"/>
 								</option>
 								<option id="com.qnx.qcc.option.compiler.includePath.1463096334" name="Include Directories (-I)" superClass="com.qnx.qcc.option.compiler.includePath" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/emulate}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/TouchControlOverlay}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/TouchControlOverlay/public}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include}&quot;"/>
 									<listOptionValue builtIn="false" value="${QNX_TARGET}/../target-override/usr/include"/>
@@ -131,6 +132,7 @@
 							<tool id="com.qnx.qcc.tool.assembler.650445297" name="QCC Assembler" superClass="com.qnx.qcc.tool.assembler">
 								<option id="com.qnx.qcc.option.assembler.includePath.2039464355" name="Include Directories (-I)" superClass="com.qnx.qcc.option.assembler.includePath" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/emulate}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/TouchControlOverlay}&quot;"/>
 								</option>
 								<inputType id="com.qnx.qcc.inputType.assembler.55159078" superClass="com.qnx.qcc.inputType.assembler"/>
 							</tool>
@@ -169,8 +171,11 @@
 				<externalSettings containerId="TouchControlOverlay;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier">
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/emulate"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/emulate/Device-Release"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/TouchControlOverlay"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/emulate/Device-Debug"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/TouchControlOverlay/Device-Debug"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="emulate"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="TouchControlOverlay"/>
 					</externalSetting>
 				</externalSettings>
 			</storageModule>
@@ -178,6 +183,9 @@
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="SDL12.null.1960473102" name="SDL12"/>
+	</storageModule>
+	<storageModule moduleId="refreshScope" versionNumber="1">
+		<resource resourceType="PROJECT" workspacePath="/SDL12"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo"/>
@@ -196,14 +204,11 @@
 		<scannerConfigBuildInfo instanceId="com.qnx.qcc.configuration.sharedLib.profile.366549893">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.qnx.qcc.configuration.sharedLib.release.1970482052">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo"/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="com.qnx.qcc.configuration.sharedLib.debug.1551432411">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo"/>
 		</scannerConfigBuildInfo>
-	</storageModule>
-	<storageModule moduleId="refreshScope" versionNumber="1">
-		<resource resourceType="PROJECT" workspacePath="/SDL12"/>
+		<scannerConfigBuildInfo instanceId="com.qnx.qcc.configuration.sharedLib.release.1970482052">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo"/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
