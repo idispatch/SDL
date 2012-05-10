@@ -210,31 +210,36 @@ int handleTouchScreen(int x, int y, int tap, int hold)
 	return TCO_SUCCESS;
 }
 
-void locateTCOControlFile(_THIS)
+void locateTCOControlFile(SDL_VideoDevice *this)
 {
     const char *filename = "sdl-controls.xml";
     char *homeDir = SDL_getenv("HOME");
     char fullPath[512];
+    size_t n;
     snprintf(fullPath, sizeof(fullPath), "%s/../%s", homeDir, filename);
     FILE* fd = fopen(fullPath, "r");
     if (fd) {
-        _priv->tcoControlsDir = SDL_malloc(strlen(fullPath) - strlen(filename) + 1);
-        strncpy(_priv->tcoControlsDir, fullPath, strlen(fullPath) - strlen(filename));
+        n = strlen(fullPath) - strlen(filename);
+        this->hidden->tcoControlsDir = SDL_malloc(n + 1);
+        strncpy(this->hidden->tcoControlsDir, fullPath, n);
+        this->hidden->tcoControlsDir[n] = 0;
         fclose(fd);
     } else {
         snprintf(fullPath, sizeof(fullPath), "%s/../app/native/%s", homeDir, filename);
         fd = fopen(fullPath, "r");
         if (fd) {
-            _priv->tcoControlsDir = SDL_malloc(strlen(fullPath) - strlen(filename) + 1);
-            strncpy(_priv->tcoControlsDir, fullPath, strlen(fullPath) - strlen(filename));
+            n = strlen(fullPath) - strlen(filename);
+            this->hidden->tcoControlsDir = SDL_malloc(n + 1);
+            strncpy(this->hidden->tcoControlsDir, fullPath, n);
+            this->hidden->tcoControlsDir[n] = 0;
             fclose(fd);
         } else {
-            _priv->tcoControlsDir = 0; // Use SDL multi-mouse controls.
+            this->hidden->tcoControlsDir = 0; // Use SDL multi-mouse controls.
         }
     }
 }
 
-void initializeOverlay(_THIS, screen_window_t screenWindow)
+void initializeOverlay(SDL_VideoDevice *this, screen_window_t screenWindow)
 {
 	int loaded = 0;
 	const char *filename = "sdl-controls.xml";
@@ -242,30 +247,31 @@ void initializeOverlay(_THIS, screen_window_t screenWindow)
 		handleKey, handleDPad, handleTouch, handleMouseButton, handleTap, handleTouchScreen
 	};
 
-	if(!_priv->tcoControlsDir) {
+	if(!this->hidden->tcoControlsDir) {
 		// Immediately fall back to SDL multi-mouse controls
 		fprintf(stderr, "Unable to initialize TCO with a NULL tcoControlsDir");
 		return;
 	}
 
-	tco_initialize(&_priv->emu_context, _priv->screenContext, callbacks);
+	tco_initialize(&this->hidden->emu_context, this->hidden->screenContext, callbacks);
 
 	// Load controls from file
 	char cwd[256];
-	if ((getcwd(cwd, 256) != NULL) && (chdir(_priv->tcoControlsDir) == 0)) {
-		if (tco_loadcontrols(_priv->emu_context, filename) == TCO_SUCCESS) {
+	memset(cwd, 0, sizeof(cwd));
+	if ((getcwd(cwd, 256) != NULL) && (chdir(this->hidden->tcoControlsDir) == 0)) {
+		if (tco_loadcontrols(this->hidden->emu_context, filename) == TCO_SUCCESS) {
 			loaded = 1;
 		}
 		chdir(cwd);
 	}
 
 	// Clean up and set flags
-	SDL_free(_priv->tcoControlsDir);
+	SDL_free(this->hidden->tcoControlsDir);
 	if (loaded) {
-		_priv->tcoControlsDir = 1;
-		tco_showlabels(_priv->emu_context, screenWindow);
+	    this->hidden->tcoControlsDir = 1;
+		tco_showlabels(this->hidden->emu_context, screenWindow);
 	} else {
-		tco_shutdown(&_priv->emu_context);
-		_priv->tcoControlsDir = 0;
+		tco_shutdown(&this->hidden->emu_context);
+		this->hidden->tcoControlsDir = 0;
 	}
 }
