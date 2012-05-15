@@ -12,7 +12,6 @@
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
 #include "../../events/SDL_events_c.h"
-#include <unistd.h>
 #include "touchcontroloverlay.h"
 #include "SDL_playbookvideo.h"
 
