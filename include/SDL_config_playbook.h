@@ -25,6 +25,10 @@
 
 #include "SDL_platform.h"
 
+#ifdef _DEBUG
+#define DEBUG_BUILD 1
+#endif
+
 /* This is the PlayBook configuration that can be used to build SDL */
 
 #include <stdarg.h>
@@ -104,10 +108,11 @@
 #define SDL_AUDIO_DRIVER_QNXNTO 1
 
 /* Enable the QNX cdrom driver (src/cdrom/dummy/\*.c) */
-#define SDL_CDROM_QNX	1
+#undef SDL_CDROM_QNX
+#define SDL_CDROM_DISABLED 1
 
 /* Enable the stub joystick driver (src/joystick/dummy/\*.c) */
-#define SDL_JOYSTICK_DISABLED	0
+#define SDL_JOYSTICK_DISABLED 1
 
 /* Enable the dlopen shared object loader (src/loadso/dlopen/\*.c) */
 #define SDL_LOADSO_DLOPEN	1
@@ -121,4 +126,5 @@
 /* Enable the dummy video driver (src/video/playbook/\*.c) */
 #define SDL_VIDEO_DRIVER_PLAYBOOK	1
 
+#define __STRETCHED__
 #endif /* _SDL_config_playbook_h */

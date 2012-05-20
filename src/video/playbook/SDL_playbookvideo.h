@@ -31,7 +31,7 @@
 #define _THIS	SDL_VideoDevice *this
 #define _priv   this->hidden
 
-#define SDL_NUMMODES 3
+#define SDL_NUMMODES 7
 
 /* Private display data */
 

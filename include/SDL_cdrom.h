@@ -32,6 +32,10 @@
 #include "SDL_error.h"
 
 #include "begin_code.h"
+
+#ifdef SDL_CDROM_DISABLED
+#else
+
 /* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
 extern "C" {
@@ -140,9 +144,9 @@ extern DECLSPEC CDstatus SDLCALL SDL_CDStatus(SDL_CD *cdrom);
 
 /**
  *  Play the given CD starting at 'start_track' and 'start_frame' for 'ntracks'
- *  tracks and 'nframes' frames.  If both 'ntrack' and 'nframe' are 0, play 
+ *  tracks and 'nframes' frames.  If both 'ntrack' and 'nframe' are 0, play
  *  until the end of the CD.  This function will skip data tracks.
- *  This function should only be called after calling SDL_CDStatus() to 
+ *  This function should only be called after calling SDL_CDStatus() to
  *  get track information about the CD.
  *  For example:
  *      @code
@@ -197,6 +201,8 @@ extern DECLSPEC void SDLCALL SDL_CDClose(SDL_CD *cdrom);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SDL_CDROM_DISABLED */
 #include "close_code.h"
 
 #endif /* _SDL_video_h */

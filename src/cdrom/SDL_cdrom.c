@@ -22,7 +22,8 @@
 #include "SDL_config.h"
 
 /* This is the CD-audio control API for Simple DirectMedia Layer */
-
+#ifdef SDL_CDROM_DISABLED
+#else
 #include "SDL_cdrom.h"
 #include "SDL_syscdrom.h"
 
@@ -307,6 +308,7 @@ int SDL_CDStop(SDL_CD *cdrom)
 		case CD_PLAYING:
 		case CD_PAUSED:
 			retval = SDL_CDcaps.Stop(cdrom);
+			break;
 		default:
 			retval = 0;
 			break;
@@ -339,3 +341,4 @@ void SDL_CDROMQuit(void)
 	SDL_SYS_CDQuit();
 	SDL_cdinitted = 0;
 }
+#endif /* SDL_CDROM_DISABLED */

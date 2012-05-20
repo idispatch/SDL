@@ -155,56 +155,56 @@ int PLAYBOOK_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	int displayCount = 0;
 	int screenResolution[2];
 
-	int rc = screen_create_context(&_priv->screenContext, 0);
+	int rc = screen_create_context(&this->hidden->screenContext, 0);
 	if (rc) {
 		SDL_SetError("Cannot create screen context: %s", strerror(errno));
 		return -1;
 	}
 
-	rc = screen_create_event(&_priv->screenEvent);
+	rc = screen_create_event(&this->hidden->screenEvent);
 	if (rc) {
 		SDL_SetError("Cannot create event object: %s", strerror(errno));
-		screen_destroy_context(_priv->screenContext);
+		screen_destroy_context(this->hidden->screenContext);
 		return -1;
 	}
 
 	if (BPS_SUCCESS != bps_initialize()) {
 		SDL_SetError("Cannot initialize BPS library: %s", strerror(errno));
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		return -1;
 	}
 
 	if (BPS_SUCCESS != navigator_rotation_lock(true)) {
 		SDL_SetError("Cannot set rotation lock: %s", strerror(errno));
 		bps_shutdown();
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		return -1;
 	}
 
 	if (BPS_SUCCESS != navigator_request_events(0)) {
 		SDL_SetError("Cannot get navigator events: %s", strerror(errno));
 		bps_shutdown();
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		return -1;
 	}
 
-	if (BPS_SUCCESS != screen_request_events(_priv->screenContext)) {
+	if (BPS_SUCCESS != screen_request_events(this->hidden->screenContext)) {
 		SDL_SetError("Cannot get screen events: %s", strerror(errno));
 		bps_shutdown();
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		return -1;
 	}
 
-	rc = screen_get_context_property_iv(_priv->screenContext, SCREEN_PROPERTY_DISPLAY_COUNT, &displayCount);
+	rc = screen_get_context_property_iv(this->hidden->screenContext, SCREEN_PROPERTY_DISPLAY_COUNT, &displayCount);
 	if (rc || displayCount <= 0) {
 		SDL_SetError("Cannot get display count: %s", strerror(errno));
-		screen_stop_events(_priv->screenContext);
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_stop_events(this->hidden->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		bps_shutdown();
 		return -1;
 	}
@@ -212,20 +212,20 @@ int PLAYBOOK_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	displays = SDL_malloc(displayCount * sizeof(screen_display_t));
 	if (!displays) {
 		SDL_SetError("Cannot get current display: %s", strerror(errno));
-		screen_stop_events(_priv->screenContext);
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_stop_events(this->hidden->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		bps_shutdown();
 		return -1;
 	}
 
-	rc = screen_get_context_property_pv(_priv->screenContext, SCREEN_PROPERTY_DISPLAYS, (void**)displays);
+	rc = screen_get_context_property_pv(this->hidden->screenContext, SCREEN_PROPERTY_DISPLAYS, (void**)displays);
 	if (rc) {
 		SDL_SetError("Cannot get current display: %s", strerror(errno));
 		SDL_free(displays);
-		screen_stop_events(_priv->screenContext);
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_stop_events(this->hidden->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		bps_shutdown();
 		return -1;
 	}
@@ -234,31 +234,49 @@ int PLAYBOOK_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	if (rc) {
 		SDL_SetError("Cannot get native resolution: %s", strerror(errno));
 		SDL_free(displays);
-		screen_stop_events(_priv->screenContext);
-		screen_destroy_event(_priv->screenEvent);
-		screen_destroy_context(_priv->screenContext);
+		screen_stop_events(this->hidden->screenContext);
+		screen_destroy_event(this->hidden->screenEvent);
+		screen_destroy_context(this->hidden->screenContext);
 		bps_shutdown();
 		return -1;
 	}
 
 	SDL_free(displays);
 
-	_priv->screenWindow = 0;
-	_priv->surface = 0;
-	_priv->eglInfo.eglDisplay = 0;
-	_priv->eglInfo.eglContext = 0;
-	_priv->eglInfo.eglSurface = 0;
+	this->hidden->screenWindow = 0;
+	this->hidden->surface = 0;
+	this->hidden->eglInfo.eglDisplay = 0;
+	this->hidden->eglInfo.eglContext = 0;
+	this->hidden->eglInfo.eglSurface = 0;
 
 	for ( i=0; i<SDL_NUMMODES; ++i ) {
-		_priv->SDL_modelist[i] = SDL_malloc(sizeof(SDL_Rect));
-		_priv->SDL_modelist[i]->x = _priv->SDL_modelist[i]->y = 0;
+		this->hidden->SDL_modelist[i] = SDL_malloc(sizeof(SDL_Rect));
+		this->hidden->SDL_modelist[i]->x = this->hidden->SDL_modelist[i]->y = 0;
 	}
 
 	/* Modes sorted largest to smallest */
-	_priv->SDL_modelist[0]->w = screenResolution[0]; _priv->SDL_modelist[0]->h = screenResolution[1];
-	_priv->SDL_modelist[1]->w = 800; _priv->SDL_modelist[1]->h = 576;
-	_priv->SDL_modelist[2]->w = 640; _priv->SDL_modelist[2]->h = 480;
-	_priv->SDL_modelist[3] = NULL;
+	this->hidden->SDL_modelist[0]->w = screenResolution[0];
+	this->hidden->SDL_modelist[0]->h = screenResolution[1];
+
+	this->hidden->SDL_modelist[1]->w = 800;
+	this->hidden->SDL_modelist[1]->h = 600;
+
+	this->hidden->SDL_modelist[2]->w = 800;
+    this->hidden->SDL_modelist[2]->h = 576;
+
+    this->hidden->SDL_modelist[3]->w = 640;
+	this->hidden->SDL_modelist[3]->h = 480;
+
+	this->hidden->SDL_modelist[4]->w = 320;
+	this->hidden->SDL_modelist[4]->h = 400;
+
+	this->hidden->SDL_modelist[5]->w = 320;
+	this->hidden->SDL_modelist[5]->h = 240;
+
+	this->hidden->SDL_modelist[6]->w = 320;
+	this->hidden->SDL_modelist[6]->h = 200;
+
+	this->hidden->SDL_modelist[7] = NULL;
 
 	/* Determine the screen depth (use default 32-bit depth) */
 	vformat->BitsPerPixel = 32;
@@ -285,7 +303,7 @@ int PLAYBOOK_VideoInit(_THIS, SDL_PixelFormat *vformat)
 SDL_Rect **PLAYBOOK_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 {
 	if (flags & SDL_FULLSCREEN ) {
-		return _priv->SDL_modelist;
+		return this->hidden->SDL_modelist;
 	} else {
 		return (SDL_Rect**)-1; // We only support full-screen video modes.
 	}
@@ -299,10 +317,10 @@ screen_window_t PLAYBOOK_CreateWindow(_THIS, SDL_Surface *current,
 	int position[2] = {0, 0};
 	int idle_mode = SCREEN_IDLE_MODE_KEEP_AWAKE; // TODO: Handle idle gracefully?
 
-	if (!_priv->screenWindow) {
+	if (!this->hidden->screenWindow) {
 		char groupName[256];
 
-		rc = screen_create_window(&screenWindow, _priv->screenContext);
+		rc = screen_create_window(&screenWindow, this->hidden->screenContext);
 		if (rc) {
 			SDL_SetError("Cannot create window: %s", strerror(errno));
 			return NULL;
@@ -318,11 +336,11 @@ screen_window_t PLAYBOOK_CreateWindow(_THIS, SDL_Surface *current,
 	} else {
 		if (current->hwdata)
 			SDL_free(current->hwdata);
-		if (_priv->tcoControlsDir) {
-			tco_shutdown(_priv->emu_context);
+		if (this->hidden->tcoControlsDir) {
+			tco_shutdown(this->hidden->emu_context);
 		}
-		screen_destroy_window_buffers(_priv->screenWindow);
-		screenWindow = _priv->screenWindow;
+		screen_destroy_window_buffers(this->hidden->screenWindow);
+		screenWindow = this->hidden->screenWindow;
 	}
 
 	rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_POSITION, position);
@@ -345,9 +363,11 @@ screen_window_t PLAYBOOK_CreateWindow(_THIS, SDL_Surface *current,
 SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 				int width, int height, int bpp, Uint32 flags)
 {
-//	fprintf(stderr, "SetVideoMode: %dx%d %dbpp\n", width, height, bpp);
+#ifdef _DEBUG
+    fprintf(stderr, "SetVideoMode: %dx%d %dbpp\n", width, height, bpp);
+#endif
 	if (width == 640 && height == 400) {
-		_priv->eventYOffset = 40;
+		this->hidden->eventYOffset = 40;
 		height = 480;
 	}
 	if (flags & SDL_OPENGL) {
@@ -360,16 +380,14 @@ SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 	int rc;
 	int format = 0;
 
-
-#ifdef __STRETCHED__
-
 	int sizeOfWindow[2];
+#ifdef __STRETCHED__
 	rc = screen_get_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
-		if (rc) {
-			SDL_SetError("Cannot get resolution: %s", strerror(errno));
-			screen_destroy_window(screenWindow);
-			return NULL;
-		}
+    if (rc) {
+        SDL_SetError("Cannot get resolution: %s", strerror(errno));
+        screen_destroy_window(screenWindow);
+        return NULL;
+    }
 #else
 	int hwResolution[2];
 
@@ -384,7 +402,6 @@ SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 	hwRatio = (float)hwResolution[0]/(float)hwResolution[1];
 	appRatio = (float)width/(float)height;
 
-//	int sizeOfWindow[2] = {816, 478};
 	double newResolution[2];
 	if(hwRatio > appRatio){
 		newResolution[0] = ((double)height / ((double)hwResolution[1] / (double)hwResolution[0]));
@@ -394,17 +411,17 @@ SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 		newResolution[1] = (((double)hwResolution[1] / (double)hwResolution[0]) * (double)width);
 	}
 
-	int sizeOfWindow[2];
 	sizeOfWindow[0] = (int)(ceil(newResolution[0]));
 	sizeOfWindow[1] = (int)(ceil(newResolution[1]));
-#endif
 
 	rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
-	if (rc) {
-		SDL_SetError("Cannot resize window: %s", strerror(errno));
-		screen_destroy_window(screenWindow);
-		return NULL;
-	}
+    if (rc) {
+        SDL_SetError("Cannot resize window: %s", strerror(errno));
+        screen_destroy_window(screenWindow);
+        return NULL;
+    }
+#endif
+
 
 #ifdef __STRETCHED__
 	int sizeOfBuffer[2] = {width, height};
@@ -475,25 +492,25 @@ SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 		return NULL;
 	}
 
-	rc = screen_get_buffer_property_pv(windowBuffer[0], SCREEN_PROPERTY_POINTER, &_priv->pixels);
+	rc = screen_get_buffer_property_pv(windowBuffer[0], SCREEN_PROPERTY_POINTER, &this->hidden->pixels);
 	if (rc) {
 		SDL_SetError("Cannot get buffer pointer: %s", strerror(errno));
 		return NULL;
 	}
 
-	rc = screen_get_buffer_property_iv(windowBuffer[0], SCREEN_PROPERTY_STRIDE, &_priv->pitch);
+	rc = screen_get_buffer_property_iv(windowBuffer[0], SCREEN_PROPERTY_STRIDE, &this->hidden->pitch);
 	if (rc) {
 		SDL_SetError("Cannot get stride: %s", strerror(errno));
 		return NULL;
 	}
 
 	locateTCOControlFile(this);
-	if (_priv->tcoControlsDir) {
+	if (this->hidden->tcoControlsDir) {
 		initializeOverlay(this, screenWindow);
 	}
 
-	_priv->frontBuffer = windowBuffer[0];
-	_priv->screenWindow = screenWindow;
+	this->hidden->frontBuffer = windowBuffer[0];
+	this->hidden->screenWindow = screenWindow;
 
 	current->hwdata = SDL_malloc(sizeof(struct private_hwdata));
 	current->hwdata->pixmap = 0;
@@ -515,9 +532,9 @@ SDL_Surface *PLAYBOOK_SetVideoMode(_THIS, SDL_Surface *current,
 	current->w = sizeOfWindow[0];
 	current->h = sizeOfWindow[1];
 #endif
-	current->pitch = _priv->pitch;
-	current->pixels = _priv->pixels;
-	_priv->surface = current;
+	current->pitch = this->hidden->pitch;
+	current->pixels = this->hidden->pixels;
+	this->hidden->surface = current;
 	return current;
 }
 
@@ -533,7 +550,7 @@ void PLAYBOOK_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 		index += 4;
 	}
 
-	screen_post_window(_priv->screenWindow, _priv->frontBuffer, numrects, dirtyRects, 0);
+	screen_post_window(this->hidden->screenWindow, this->hidden->frontBuffer, numrects, dirtyRects, 0);
 }
 
 int PLAYBOOK_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
@@ -549,23 +566,23 @@ int PLAYBOOK_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 // FIXME: Fix up cleanup process
 void PLAYBOOK_VideoQuit(_THIS)
 {
-	if (_priv->screenWindow) {
-		if (_priv->eglInfo.eglDisplay) {
-			eglDestroySurface(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglSurface);
-			screen_destroy_window(_priv->screenWindow);
-			eglDestroyContext(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglContext);
-			eglTerminate(_priv->eglInfo.eglDisplay);
+	if (this->hidden->screenWindow) {
+		if (this->hidden->eglInfo.eglDisplay) {
+			eglDestroySurface(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglSurface);
+			screen_destroy_window(this->hidden->screenWindow);
+			eglDestroyContext(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglContext);
+			eglTerminate(this->hidden->eglInfo.eglDisplay);
 		} else {
-			screen_destroy_window_buffers(_priv->screenWindow);
-			screen_destroy_window(_priv->screenWindow);
+			screen_destroy_window_buffers(this->hidden->screenWindow);
+			screen_destroy_window(this->hidden->screenWindow);
 		}
 	}
-	screen_stop_events(_priv->screenContext);
-	screen_destroy_event(_priv->screenEvent);
-	screen_destroy_context(_priv->screenContext);
+	screen_stop_events(this->hidden->screenContext);
+	screen_destroy_event(this->hidden->screenEvent);
+	screen_destroy_context(this->hidden->screenContext);
 	bps_shutdown();
-	if (_priv->tcoControlsDir) {
-		tco_shutdown(_priv->emu_context);
+	if (this->hidden->tcoControlsDir) {
+		tco_shutdown(this->hidden->emu_context);
 	}
 	this->screen = 0;
 }

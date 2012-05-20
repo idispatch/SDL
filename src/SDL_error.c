@@ -107,7 +107,7 @@ void SDL_SetError (const char *fmt, ...)
 	va_end(ap);
 
 	/* If we are in debug mode, print out an error message */
-#ifdef DEBUG_ERROR
+#if defined (DEBUG_ERROR) || defined(_DEBUG)
 	fprintf(stderr, "SDL_SetError: %s\n", SDL_GetError());
 #endif
 }

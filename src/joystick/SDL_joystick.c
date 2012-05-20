@@ -21,6 +21,8 @@
 */
 #include "SDL_config.h"
 
+#ifdef SDL_JOYSTICK_DISABLED
+#else
 /* This is the joystick API for Simple DirectMedia Layer */
 
 #include "SDL_events.h"
@@ -574,3 +576,4 @@ int SDL_JoystickEventState(int state)
 	return(state);
 #endif /* SDL_EVENTS_DISABLED */
 }
+#endif /* SDL_JOYSTICK_DISABLED */
