@@ -27,10 +27,6 @@
 #include "../SDL_sysvideo.h"
 #include <screen/screen.h>
 
-/* Hidden "this" pointer for the video functions */
-#define _THIS	SDL_VideoDevice *this
-#define _priv   this->hidden
-
 #define SDL_NUMMODES 7
 
 /* Private display data */
@@ -53,18 +49,18 @@ struct SDL_PrivateVideoData {
 
     // For 8bit video driver and OpenGL windows
     struct {
-    	void *eglDisplay;
-    	void *eglContext;
-    	void *eglSurface;
+        void *eglDisplay;
+        void *eglContext;
+        void *eglSurface;
     } eglInfo;
 
     struct {
-    	unsigned int shader;
-    	int positionAttrib;
-    	int texcoordAttrib;
-    	unsigned int palette;
-    	unsigned int screen[2];
-    	int writableScreen;
+        unsigned int shader;
+        int positionAttrib;
+        int texcoordAttrib;
+        unsigned int palette;
+        unsigned int screen[2];
+        int writableScreen;
     } glInfo;
 };
 

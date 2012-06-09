@@ -14,17 +14,17 @@
 #include "SDL_playbookvideo.h"
 
 struct private_hwdata {
-	screen_pixmap_t pixmap;
-	screen_window_t window;
-	screen_buffer_t front;
-	screen_buffer_t back;
+    screen_pixmap_t pixmap;
+    screen_window_t window;
+    screen_buffer_t front;
+    screen_buffer_t back;
 };
 
-int PLAYBOOK_AllocHWSurface(_THIS, SDL_Surface *surface);
-void PLAYBOOK_FreeHWSurface(_THIS, SDL_Surface *surface);
-int PLAYBOOK_LockHWSurface(_THIS, SDL_Surface *surface);
-void PLAYBOOK_UnlockHWSurface(_THIS, SDL_Surface *surface);
-int PLAYBOOK_FlipHWSurface(_THIS, SDL_Surface *surface);
-int PLAYBOOK_FillHWRect(_THIS, SDL_Surface *dst, SDL_Rect *rect, Uint32 color);
+int PLAYBOOK_AllocHWSurface(SDL_VideoDevice *this, SDL_Surface *surface);
+void PLAYBOOK_FreeHWSurface(SDL_VideoDevice *this, SDL_Surface *surface);
+int PLAYBOOK_LockHWSurface(SDL_VideoDevice *this, SDL_Surface *surface);
+void PLAYBOOK_UnlockHWSurface(SDL_VideoDevice *this, SDL_Surface *surface);
+int PLAYBOOK_FlipHWSurface(SDL_VideoDevice *this, SDL_Surface *surface);
+int PLAYBOOK_FillHWRect(SDL_VideoDevice *this, SDL_Surface *dst, SDL_Rect *rect, Uint32 color);
 
 #endif /* SDL_PLAYBOOKHW_C_H_ */

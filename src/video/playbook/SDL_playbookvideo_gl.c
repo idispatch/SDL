@@ -56,190 +56,190 @@ static void egl_perror(const char *msg)
     fprintf(stderr, "%s: %s\n", msg, errmsg[eglGetError() - EGL_SUCCESS]);
 }
 
-SDL_Surface *PLAYBOOK_SetVideoMode_GL(_THIS, SDL_Surface *current,
-				int width, int height, int bpp, Uint32 flags)
+SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *current,
+                int width, int height, int bpp, Uint32 flags)
 {
-	int rc;
-	EGLint attributes[] = {
-		EGL_RED_SIZE, 8,
-		EGL_GREEN_SIZE, 8,
-		EGL_BLUE_SIZE, 8,
-		EGL_ALPHA_SIZE, 8,
-		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
-		EGL_NONE
-	};
-	EGLint contextAttributes[3] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE };
-	EGLConfig configs[1];
-	EGLint configCount;
-	screen_window_t screenWindow;
-	int format = SCREEN_FORMAT_RGBX8888;
-	int sizeOfWindow[2] = {1024, 600};
-	int sizeOfBuffer[2] = {width, height};
-	int usage = SCREEN_USAGE_OPENGL_ES1;
-	EGLint eglSurfaceAttributes[3] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE };
+    int rc;
+    EGLint attributes[] = {
+        EGL_RED_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_BLUE_SIZE, 8,
+        EGL_ALPHA_SIZE, 8,
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
+        EGL_NONE
+    };
+    EGLint contextAttributes[3] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE };
+    EGLConfig configs[1];
+    EGLint configCount;
+    screen_window_t screenWindow;
+    int format = SCREEN_FORMAT_RGBX8888;
+    int sizeOfWindow[2] = {1024, 600};
+    int sizeOfBuffer[2] = {width, height};
+    int usage = SCREEN_USAGE_OPENGL_ES1;
+    EGLint eglSurfaceAttributes[3] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE };
 
-	if (_priv->screenWindow) {
-		fprintf(stderr, "OpenGL window already created... this WILL fail\n"); // FIXME
-	}
+    if (this->hidden->screenWindow) {
+        fprintf(stderr, "OpenGL window already created... this WILL fail\n"); // FIXME
+    }
 
-	_priv->eglInfo.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	if (_priv->eglInfo.eglDisplay == EGL_NO_DISPLAY) {
-		egl_perror("eglGetDisplay");
-		goto error1;
-	}
+    this->hidden->eglInfo.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (this->hidden->eglInfo.eglDisplay == EGL_NO_DISPLAY) {
+        egl_perror("eglGetDisplay");
+        goto error1;
+    }
 
-	rc = eglInitialize(_priv->eglInfo.eglDisplay, NULL, NULL);
-	if (rc != EGL_TRUE) {
-		egl_perror("eglInitialize");
-		goto error1;
-	}
+    rc = eglInitialize(this->hidden->eglInfo.eglDisplay, NULL, NULL);
+    if (rc != EGL_TRUE) {
+        egl_perror("eglInitialize");
+        goto error1;
+    }
 
-	rc = eglBindAPI(EGL_OPENGL_ES_API);
-	if (rc != EGL_TRUE) {
-		egl_perror("eglBindAPI");
-		goto error2;
-	}
+    rc = eglBindAPI(EGL_OPENGL_ES_API);
+    if (rc != EGL_TRUE) {
+        egl_perror("eglBindAPI");
+        goto error2;
+    }
 
-	rc = eglChooseConfig(_priv->eglInfo.eglDisplay, attributes, configs, 1, &configCount);
-	if (rc != EGL_TRUE)	{
-		egl_perror("eglBindAPI");
-		eglTerminate(_priv->eglInfo.eglDisplay);
-		return NULL;
-	} else if (configCount <= 0)	{
-		fprintf(stderr, "No matching configurations found.");
-		goto error2;
-	}
+    rc = eglChooseConfig(this->hidden->eglInfo.eglDisplay, attributes, configs, 1, &configCount);
+    if (rc != EGL_TRUE)    {
+        egl_perror("eglBindAPI");
+        eglTerminate(this->hidden->eglInfo.eglDisplay);
+        return NULL;
+    } else if (configCount <= 0)    {
+        fprintf(stderr, "No matching configurations found.");
+        goto error2;
+    }
 
-	_priv->eglInfo.eglContext = eglCreateContext(_priv->eglInfo.eglDisplay, configs[0], EGL_NO_CONTEXT, contextAttributes);
-	if (_priv->eglInfo.eglContext == EGL_NO_CONTEXT)	{
-		egl_perror("eglCreateContext");
-		goto error2;
-	}
+    this->hidden->eglInfo.eglContext = eglCreateContext(this->hidden->eglInfo.eglDisplay, configs[0], EGL_NO_CONTEXT, contextAttributes);
+    if (this->hidden->eglInfo.eglContext == EGL_NO_CONTEXT)    {
+        egl_perror("eglCreateContext");
+        goto error2;
+    }
 
-	screenWindow = PLAYBOOK_CreateWindow(this, current, width, height, bpp);
-	if (screenWindow == NULL) {
-		goto error3;
-	}
+    screenWindow = PLAYBOOK_CreateWindow(this, current, width, height, bpp);
+    if (screenWindow == NULL) {
+        goto error3;
+    }
 
-	rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
-	if (rc) {
-		SDL_SetError("Cannot resize window: %s", strerror(errno));
-		screen_destroy_window(screenWindow);
-		return NULL;
-	}
+    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
+    if (rc) {
+        SDL_SetError("Cannot resize window: %s", strerror(errno));
+        screen_destroy_window(screenWindow);
+        return NULL;
+    }
 
-//		rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_BUFFER_SIZE, sizeOfBuffer);
-//		if (rc) {
-//			SDL_SetError("Cannot resize window buffer: %s", strerror(errno));
-//			screen_destroy_window(screenWindow);
-//			return NULL;
-//		}
+//        rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_BUFFER_SIZE, sizeOfBuffer);
+//        if (rc) {
+//            SDL_SetError("Cannot resize window buffer: %s", strerror(errno));
+//            screen_destroy_window(screenWindow);
+//            return NULL;
+//        }
 
-	rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_FORMAT, &format);
-	if (rc) {
-		SDL_SetError("Cannot set window format: %s", strerror(errno));
-		goto error4;
-	}
+    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_FORMAT, &format);
+    if (rc) {
+        SDL_SetError("Cannot set window format: %s", strerror(errno));
+        goto error4;
+    }
 
-	rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_USAGE, &usage);
-	if (rc) {
-		SDL_SetError("Cannot set window usage: %s", strerror(errno));
-		goto error4;
-	}
+    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_USAGE, &usage);
+    if (rc) {
+        SDL_SetError("Cannot set window usage: %s", strerror(errno));
+        goto error4;
+    }
 
-	int angle = 0;
-	char *orientation = getenv("ORIENTATION");
-	if (orientation) {
-		 angle = atoi(orientation);
-	}
-	rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
-	if (rc) {
-		SDL_SetError("Cannot set window rotation: %s", strerror(errno));
-		goto error4;
-	}
+    int angle = 0;
+    char *orientation = getenv("ORIENTATION");
+    if (orientation) {
+         angle = atoi(orientation);
+    }
+    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
+    if (rc) {
+        SDL_SetError("Cannot set window rotation: %s", strerror(errno));
+        goto error4;
+    }
 
-	rc = screen_create_window_buffers(screenWindow, 2);
-	if (rc) {
-		SDL_SetError("Cannot create window buffers: %s", strerror(errno));
-		goto error4;
-	}
+    rc = screen_create_window_buffers(screenWindow, 2);
+    if (rc) {
+        SDL_SetError("Cannot create window buffers: %s", strerror(errno));
+        goto error4;
+    }
 
-	_priv->eglInfo.eglSurface = eglCreateWindowSurface(_priv->eglInfo.eglDisplay, configs[0],
-			screenWindow, (EGLint*)&eglSurfaceAttributes);
-	if (_priv->eglInfo.eglSurface == EGL_NO_SURFACE) {
-		egl_perror("eglCreateWindowSurface");
-		goto error4;
-	}
+    this->hidden->eglInfo.eglSurface = eglCreateWindowSurface(this->hidden->eglInfo.eglDisplay, configs[0],
+            screenWindow, (EGLint*)&eglSurfaceAttributes);
+    if (this->hidden->eglInfo.eglSurface == EGL_NO_SURFACE) {
+        egl_perror("eglCreateWindowSurface");
+        goto error4;
+    }
 
-	rc = eglMakeCurrent(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglSurface, _priv->eglInfo.eglSurface, _priv->eglInfo.eglContext);
-	if (rc != EGL_TRUE) {
-		egl_perror("eglMakeCurrent");
-		goto error5;
-	}
+    rc = eglMakeCurrent(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglSurface, this->hidden->eglInfo.eglSurface, this->hidden->eglInfo.eglContext);
+    if (rc != EGL_TRUE) {
+        egl_perror("eglMakeCurrent");
+        goto error5;
+    }
 
-	locateTCOControlFile(this);
-	if (_priv->tcoControlsDir) {
-		initializeOverlay(this, screenWindow);	
-	}
+    locateTCOControlFile(this);
+    if (this->hidden->tcoControlsDir) {
+        initializeOverlay(this, screenWindow);
+    }
 
-	_priv->screenWindow = screenWindow;
+    this->hidden->screenWindow = screenWindow;
 
-	current->flags &= ~SDL_RESIZABLE;
-	current->flags |= SDL_FULLSCREEN;
-	current->flags |= SDL_HWSURFACE;
-	current->flags |= SDL_OPENGL;
-	current->w = width;
-	current->h = height;
-	current->pixels = 0;
-	_priv->surface = current;
-	return current;
+    current->flags &= ~SDL_RESIZABLE;
+    current->flags |= SDL_FULLSCREEN;
+    current->flags |= SDL_HWSURFACE;
+    current->flags |= SDL_OPENGL;
+    current->w = width;
+    current->h = height;
+    current->pixels = 0;
+    this->hidden->surface = current;
+    return current;
 error5:
-	eglDestroySurface(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglSurface);
-	_priv->eglInfo.eglSurface = 0;
+    eglDestroySurface(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglSurface);
+    this->hidden->eglInfo.eglSurface = 0;
 error4:
-	screen_destroy_window(screenWindow);
+    screen_destroy_window(screenWindow);
 error3:
-	eglDestroyContext(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglContext);
-	_priv->eglInfo.eglContext = 0;
+    eglDestroyContext(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglContext);
+    this->hidden->eglInfo.eglContext = 0;
 error2:
-	eglTerminate(_priv->eglInfo.eglDisplay);
-	_priv->eglInfo.eglDisplay = 0;
+    eglTerminate(this->hidden->eglInfo.eglDisplay);
+    this->hidden->eglInfo.eglDisplay = 0;
 error1:
-	return NULL;
+    return NULL;
 }
 
 /* Sets the dll to use for OpenGL and loads it */
-int PLAYBOOK_GL_LoadLibrary(_THIS, const char *path)
+int PLAYBOOK_GL_LoadLibrary(SDL_VideoDevice *this, const char *path)
 {
-	fprintf(stderr, "%s\n", __FUNCTION__);
-	return 0;
+    fprintf(stderr, "%s\n", __FUNCTION__);
+    return 0;
 }
 
 /* Retrieves the address of a function in the gl library */
-void* PLAYBOOK_GL_GetProcAddress(_THIS, const char *proc) {
-	fprintf(stderr, "%s\n", __FUNCTION__);
-	return 0;
+void* PLAYBOOK_GL_GetProcAddress(SDL_VideoDevice *this, const char *proc) {
+    fprintf(stderr, "%s\n", __FUNCTION__);
+    return 0;
 }
 
 /* Get attribute information from the windowing system. */
-int PLAYBOOK_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
+int PLAYBOOK_GL_GetAttribute(SDL_VideoDevice *this, SDL_GLattr attrib, int* value)
 {
-	fprintf(stderr, "%s\n", __FUNCTION__);
-	return 0;
+    fprintf(stderr, "%s\n", __FUNCTION__);
+    return 0;
 }
 
 /* Make the context associated with this driver current */
-int PLAYBOOK_GL_MakeCurrent(_THIS)
+int PLAYBOOK_GL_MakeCurrent(SDL_VideoDevice *this)
 {
-	int rc = eglMakeCurrent(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglSurface, _priv->eglInfo.eglSurface, _priv->eglInfo.eglContext);
-//	fprintf(stderr, "%s: %d\n", __FUNCTION__, rc);
-	return rc;
+    int rc = eglMakeCurrent(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglSurface, this->hidden->eglInfo.eglSurface, this->hidden->eglInfo.eglContext);
+//    fprintf(stderr, "%s: %d\n", __FUNCTION__, rc);
+    return rc;
 }
 
 /* Swap the current buffers in double buffer mode. */
-void PLAYBOOK_GL_SwapBuffers(_THIS)
+void PLAYBOOK_GL_SwapBuffers(SDL_VideoDevice *this)
 {
-//	fprintf(stderr, "%s\n", __FUNCTION__);
-	eglSwapBuffers(_priv->eglInfo.eglDisplay, _priv->eglInfo.eglSurface);
+//    fprintf(stderr, "%s\n", __FUNCTION__);
+    eglSwapBuffers(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglSurface);
 }

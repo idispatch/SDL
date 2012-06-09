@@ -23,11 +23,11 @@
 
 #include "SDL_playbookvideo.h"
 
-/* Variables and functions exported by SDL_sysevents.c to other parts 
+/* Variables and functions exported by SDL_sysevents.c to other parts
    of the native video subsystem (SDL_sysvideo.c)
 */
-extern void PLAYBOOK_InitOSKeymap(_THIS);
-extern void PLAYBOOK_PumpEvents(_THIS);
+extern void PLAYBOOK_InitOSKeymap(SDL_VideoDevice *this);
+extern void PLAYBOOK_PumpEvents(SDL_VideoDevice *this);
 
 /* end of SDL_playbookevents_c.h ... */
 
