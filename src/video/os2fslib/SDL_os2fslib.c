@@ -219,7 +219,7 @@ static UniChar NativeCharToUniChar(int chcode)
 
   UniFreeUconvObject(ucoTemp);
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("%02x converted to %02x\n", (int) chcode, (int) (aucTo[0]));
 #endif
 
@@ -388,7 +388,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
   switch (msg)
   {
     case WM_CHAR:  // Keypress notification
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //      printf("WM_CHAR\n"); fflush(stdout);
 #endif
       pVideo = WinQueryWindowPtr(hwnd, 0);
@@ -398,7 +398,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
         // We skip repeated keys:
         if (CHARMSG(&msg)->cRepeat>1)
         {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //          printf("Repeated key (%d), skipping...\n", CHARMSG(&msg)->cRepeat); fflush(stdout);
 #endif
           return (MRESULT) TRUE;
@@ -411,7 +411,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           // A key has been released
           SDL_keysym keysym;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //          printf("WM_CHAR, keyup, code is [0x%0x]\n", CHAR4FROMMP(mp1)); // HW scan code
 #endif
 
@@ -440,7 +440,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           // A key has been pressed
           SDL_keysym keysym;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //          printf("WM_CHAR, keydown, code is [0x%0x]\n", CHAR4FROMMP(mp1)); // HW scan code
 #endif
           // Check for fastkeys: ALT+HOME to toggle FS mode
@@ -448,7 +448,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           if ((SHORT1FROMMP(mp1) & KC_ALT) &&
               (SHORT2FROMMP(mp2) == VK_HOME))
           {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             printf(" Pressed ALT+HOME!\n"); fflush(stdout);
 #endif
             // Only switch between fullscreen and back if it's not
@@ -460,7 +460,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
                 )
                )
               FSLib_ToggleFSMode(hwnd, !FSLib_QueryFSMode(hwnd));
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             else
               printf(" Resizable mode, so discarding ALT+HOME!\n"); fflush(stdout);
 #endif
@@ -468,7 +468,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           if ((SHORT1FROMMP(mp1) & KC_ALT) &&
               (SHORT2FROMMP(mp2) == VK_END))
           {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             printf(" Pressed ALT+END!\n"); fflush(stdout);
 #endif
             // Close window, and get out of loop!
@@ -506,7 +506,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
       }
 
     case WM_PAINT:  // Window redraw!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_PAINT (0x%x)\n", hwnd); fflush(stdout);
 #endif
       ps = WinBeginPaint(hwnd,0,&rcl);
@@ -517,7 +517,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
         {
           RECTL rclRect;
           // So, don't blit now!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
           printf("WM_PAINT : Skipping blit while resizing (Pre!)!\n"); fflush(stdout);
 #endif
           WinQueryWindowRect(hwnd, &rclRect);
@@ -535,7 +535,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
             // Re-blit the modified area!
             // For this, we have to calculate the points, scaled!
             WinQueryWindowPos(hwnd, &swp);
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             printf("WM_PAINT : WinSize: %d %d, BufSize: %d %d\n",
                    swp.cx,
                    swp.cy,
@@ -562,7 +562,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
               RECTL rclRect;
               // Resizable surface and in resizing!
               // So, don't blit now!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
               printf("WM_PAINT : Skipping blit while resizing!\n"); fflush(stdout);
 #endif
               WinQueryWindowRect(hwnd, &rclRect);
@@ -596,7 +596,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
               if (iTop+iHeight>pVideo->hidden->SrcBufferDesc.uiYResolution) iHeight = pVideo->hidden->SrcBufferDesc.uiYResolution-iTop;
               if (iLeft+iWidth>pVideo->hidden->SrcBufferDesc.uiXResolution) iWidth = pVideo->hidden->SrcBufferDesc.uiXResolution-iLeft;
     
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
               printf("WM_PAINT : BitBlt: %d %d -> %d %d (Buf %d x %d)\n",
                      iTop, iLeft, iWidth, iHeight,
                      pVideo->hidden->SrcBufferDesc.uiXResolution,
@@ -612,14 +612,14 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           }
         }
       }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       else
       {
         printf("WM_PAINT : No pVideo!\n"); fflush(stdout);
       }
 #endif
       WinEndPaint(ps);
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_PAINT : Done.\n");
       fflush(stdout);
 #endif
@@ -627,7 +627,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
 
     case WM_SIZE:
       {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
         printf("WM_SIZE : (%d %d)\n",
                SHORT1FROMMP(mp2), SHORT2FROMMP(mp2)); fflush(stdout);
 #endif
@@ -641,7 +641,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
       break;
 
     case WM_FSLIBNOTIFICATION:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
         printf("WM_FSLIBNOTIFICATION\n"); fflush(stdout);
 #endif
       if ((int)mp1 == FSLN_TOGGLEFSMODE)
@@ -654,7 +654,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           {
             // Resizable surface and in resizing!
             // So, don't blit now!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             printf("WM_FSLIBNOTIFICATION : Can not blit if there is no surface, doing nothing.\n"); fflush(stdout);
 #endif
           } else
@@ -683,13 +683,13 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
                 {
                   // Resizable surface and in resizing!
                   // So, don't blit now!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
                   printf("WM_FSLIBNOTIFICATION : Cannot blit while resizing, doing nothing.\n"); fflush(stdout);
 #endif
                 } else
 #endif
                 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
                   printf("WM_FSLIBNOTIFICATION : Blitting!\n"); fflush(stdout);
 #endif
                   FSLIB_BITBLT(hwnd, pVideo->hidden->pchSrcBuffer,
@@ -698,7 +698,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
                                pVideo->hidden->SrcBufferDesc.uiYResolution);
                 }
               }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
               else
                 printf("WM_FSLIBNOTIFICATION : No public surface!\n"); fflush(stdout);
 #endif
@@ -711,7 +711,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
       return (MPARAM) 1;
 
     case WM_ACTIVATE:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_ACTIVATE\n"); fflush(stdout);
 #endif
 
@@ -758,14 +758,14 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           }
         }
       }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_ACTIVATE done\n"); fflush(stdout);
 #endif
 
       break;
 
     case WM_BUTTON1DOWN:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_BUTTON1DOWN\n"); fflush(stdout);
 #endif
 
@@ -801,7 +801,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
       }
       break;
     case WM_BUTTON1UP:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_BUTTON1UP\n"); fflush(stdout);
 #endif
       SDL_PrivateMouseButton(SDL_RELEASED,
@@ -809,7 +809,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
                              0, 0); // Don't report mouse movement!
       break;
     case WM_BUTTON2DOWN:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_BUTTON2DOWN\n"); fflush(stdout);
 #endif
 
@@ -846,7 +846,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
       }
       break;
     case WM_BUTTON2UP:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_BUTTON2UP\n"); fflush(stdout);
 #endif
       SDL_PrivateMouseButton(SDL_RELEASED,
@@ -854,7 +854,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
                              0, 0); // Don't report mouse movement!
       break;
     case WM_BUTTON3DOWN:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_BUTTON3DOWN\n"); fflush(stdout);
 #endif
 
@@ -890,7 +890,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
       }
       break;
     case WM_BUTTON3UP:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_BUTTON3UP\n"); fflush(stdout);
 #endif
       SDL_PrivateMouseButton(SDL_RELEASED,
@@ -898,7 +898,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
                              0, 0); // Don't report mouse movement!
       break;
     case WM_MOUSEMOVE:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //      printf("WM_MOUSEMOVE\n"); fflush(stdout);
 #endif
 
@@ -946,7 +946,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
         }
         if ((pVideo->hidden->iMouseVisible) && (!bMouseCaptured))
         {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //          printf("WM_MOUSEMOVE : ptr = %p\n", hptrGlobalPointer); fflush(stdout);
 #endif
 
@@ -960,13 +960,13 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           WinSetPointer(HWND_DESKTOP, NULL);
         }
       }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //      printf("WM_MOUSEMOVE done\n"); fflush(stdout);
 #endif
 
       return (MRESULT) FALSE;
     case WM_CLOSE: // Window close
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("WM_CLOSE\n"); fflush(stdout);
 #endif
 
@@ -1009,13 +1009,13 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
           {
             // Resizable surface and in resizing!
             // So, don't blit now!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             printf("[WM_UPDATERECTSREQUEST] : Skipping blit while resizing!\n"); fflush(stdout);
 #endif
           } else
 #endif
           {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
             printf("[WM_UPDATERECTSREQUEST] : Blitting!\n"); fflush(stdout);
 #endif
           
@@ -1031,7 +1031,7 @@ static MRESULT EXPENTRY WndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
 #endif
 
     default:
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("Unhandled: %x\n", msg); fflush(stdout);
 #endif
 
@@ -1150,7 +1150,7 @@ static void PMThreadFunc(void *pParm)
   QMSG msg;
   ULONG fcf;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[PMThreadFunc] : Starting\n"); fflush(stdout);
 #endif
 
@@ -1162,7 +1162,7 @@ static void PMThreadFunc(void *pParm)
   hmq=WinCreateMsgQueue(hab,0);
   if (hmq==0)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[PMThreadFunc] : Could not create message queue!\n");
     printf("                 It might be that the application using SDL is not a PM app!\n");
     fflush(stdout);
@@ -1175,7 +1175,7 @@ static void PMThreadFunc(void *pParm)
 
     fcf = ulFCFToUse; // Get from global setting
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[PMThreadFunc] : FSLib_CreateWindow()!\n");
     fflush(stdout);
 #endif
@@ -1188,21 +1188,21 @@ static void PMThreadFunc(void *pParm)
                             &(pVideo->hidden->hwndClient),
                             &(pVideo->hidden->hwndFrame));
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[PMThreadFunc] : FSLib_CreateWindow() rc = %d\n", rc);
     fflush(stdout);
 #endif
 
     if (!rc)
     {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[PMThreadFunc] : Could not create FSLib window!\n");
       fflush(stdout);
 #endif
       pVideo->hidden->iPMThreadStatus = 3;
     } else
     {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[PMThreadFunc] : FSLib_AddUserParm()!\n");
       fflush(stdout);
 #endif
@@ -1212,7 +1212,7 @@ static void PMThreadFunc(void *pParm)
       FSLib_AddUserParm(pVideo->hidden->hwndClient, pVideo);
 
       // Now set default image width height and fourcc!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[PMThreadFunc] : SetWindowPos()!\n");
       fflush(stdout);
 #endif
@@ -1239,7 +1239,7 @@ static void PMThreadFunc(void *pParm)
         WinSubclassWindow(pVideo->hidden->hwndFrame, FrameWndProc);
       WinSetWindowULong(pVideo->hidden->hwndFrame, QWL_USER, (ULONG) pVideo);
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[PMThreadFunc] : Entering message loop\n"); fflush(stdout);
 #endif
       pVideo->hidden->iPMThreadStatus = 1;
@@ -1247,7 +1247,7 @@ static void PMThreadFunc(void *pParm)
       while (WinGetMsg(hab, (PQMSG)&msg, 0, 0, 0))
         WinDispatchMsg(hab, (PQMSG) &msg);
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[PMThreadFunc] : Leaving message loop\n"); fflush(stdout);
 #endif
       // We should release the captured the mouse!
@@ -1273,7 +1273,7 @@ static void PMThreadFunc(void *pParm)
   // Notify SDL that it should really die now...
   SDL_PrivateQuit(); SDL_PrivateQuit(); SDL_PrivateQuit(); //... :))
   */
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[PMThreadFunc] : End, status is %d!\n", pVideo->hidden->iPMThreadStatus); fflush(stdout);
 #endif
 
@@ -1294,7 +1294,7 @@ static void PMThreadFunc(void *pParm)
     // Otherwise, we have a problem, the app doesn't want to stop. Kill!
     if (iNumOfPMThreadInstances==0)
     {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[PMThreadFunc] : It seems that the application haven't terminated itself\n"); fflush(stdout);
       printf("[PMThreadFunc] : in the last 5 seconds, so we go berserk.\n"); fflush(stdout);
       printf("[PMThreadFunc] : Brute force mode. :) Killing process! Dieeeee...\n"); fflush(stdout);
@@ -1424,7 +1424,7 @@ WMcursor *os2fslib_CreateWMCursor_Win(_THIS, Uint8 *data, Uint8 *mask,
   hbm = GpiCreateBitmap(hps, (PBITMAPINFOHEADER2)&bmih, CBM_INIT, (PBYTE) pchTemp, (PBITMAPINFO2)&bmi);
   hptr = WinCreatePointer(HWND_DESKTOP, hbm, TRUE, hot_x, maxy - hot_y - 1);
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("HotSpot          : %d ; %d\n", hot_x, hot_y);
   printf("HPS returned     : %x\n", (ULONG)hps);
   printf("HBITMAP returned : %x\n", (ULONG)hbm);
@@ -1433,7 +1433,7 @@ WMcursor *os2fslib_CreateWMCursor_Win(_THIS, Uint8 *data, Uint8 *mask,
 
   WinReleasePS(hps);
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[CreateWMCursor] : ptr = %p\n", hptr); fflush(stdout);
 #endif
 
@@ -1441,7 +1441,7 @@ WMcursor *os2fslib_CreateWMCursor_Win(_THIS, Uint8 *data, Uint8 *mask,
   pResult->hbm = hbm;
   pResult->pchData = pchTemp;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[CreateWMCursor] : ptr = %p return.\n", hptr); fflush(stdout);
 #endif
 
@@ -1451,7 +1451,7 @@ WMcursor *os2fslib_CreateWMCursor_Win(_THIS, Uint8 *data, Uint8 *mask,
 WMcursor *os2fslib_CreateWMCursor_FS(_THIS, Uint8 *data, Uint8 *mask,
                                      int w, int h, int hot_x, int hot_y)
 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[CreateWMCursor_FS] : returning pointer NULL\n"); fflush(stdout);
 #endif
 
@@ -1462,7 +1462,7 @@ WMcursor *os2fslib_CreateWMCursor_FS(_THIS, Uint8 *data, Uint8 *mask,
 /* Show the specified cursor, or hide if cursor is NULL */
 int os2fslib_ShowWMCursor(_THIS, WMcursor *cursor)
 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[ShowWMCursor] : ptr = %p\n", cursor); fflush(stdout);
 #endif
 
@@ -1479,7 +1479,7 @@ int os2fslib_ShowWMCursor(_THIS, WMcursor *cursor)
     _this->hidden->iMouseVisible = 0;
   }
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[ShowWMCursor] : ptr = %p, DONE\n", cursor); fflush(stdout);
 #endif
 
@@ -1516,7 +1516,7 @@ void os2fslib_MoveWMCursor(_THIS, int x, int y)
   /*
   SDL_Rect rect;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[MoveWMCursor] : at %d ; %d\n", x, y); fflush(stdout);
 #endif
 
@@ -1564,7 +1564,7 @@ static void os2fslib_PumpEvents(_THIS)
       // Make sure we won't flood the event queue with resize events,
       // only send them at 250 msecs!
       // (or when the window is resized)
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[os2fslib_PumpEvents] : Calling PrivateResize (%d %d).\n",
              iWindowSizeX, iWindowSizeY);
       fflush(stdout);
@@ -1635,7 +1635,7 @@ void os2fslib_SetIcon(_THIS, SDL_Surface *icon, Uint8 *mask)
   int maxx, maxy, w, h, x, y;
   SDL_Rect bounds;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_SetIcon] : Creating and setting new icon\n"); fflush(stdout);
 #endif
 
@@ -1998,7 +1998,7 @@ static SDL_GrabMode os2fslib_GrabInput(_THIS, SDL_GrabMode mode)
 
   if (mode == SDL_GRAB_OFF)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_GrabInput] : Releasing mouse\n"); fflush(stdout);
 #endif
 
@@ -2011,7 +2011,7 @@ static SDL_GrabMode os2fslib_GrabInput(_THIS, SDL_GrabMode mode)
     }
   } else
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_GrabInput] : Capturing mouse\n"); fflush(stdout);
 #endif
 
@@ -2069,7 +2069,7 @@ static void os2fslib_SetCaption(_THIS, const char *title, const char *icon)
 
 static int os2fslib_ToggleFullScreen(_THIS, int on)
 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_ToggleFullScreen] : %d\n", on); fflush(stdout);
 #endif
   // If there is no more window, nothing we can do!
@@ -2171,7 +2171,7 @@ static void os2fslib_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
       {
         // Resizable surface and in resizing!
         // So, don't blit now!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
         printf("[UpdateRects] : Skipping blit while resizing!\n"); fflush(stdout);
 #endif
       } else
@@ -2184,7 +2184,7 @@ static void os2fslib_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
                      _this->hidden->SrcBufferDesc.uiXResolution,
                      _this->hidden->SrcBufferDesc.uiYResolution);
                      */
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
           printf("[os2fslib_UpdateRects] : Blitting!\n"); fflush(stdout);
 #endif
   
@@ -2194,13 +2194,13 @@ static void os2fslib_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
                        rects[i].y, rects[i].x, rects[i].w, rects[i].h);
       }
     }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
      else
        printf("[os2fslib_UpdateRects] : No public surface!\n"); fflush(stdout);
 #endif
     DosReleaseMutexSem(_this->hidden->hmtxUseSrcBuffer);
   }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   else
     printf("[os2fslib_UpdateRects] : Error in mutex!\n"); fflush(stdout);
 #endif
@@ -2213,7 +2213,7 @@ static void os2fslib_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
  */
 static void os2fslib_VideoQuit(_THIS)
 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_VideoQuit]\n"); fflush(stdout);
 #endif
   // Close PM stuff if running!
@@ -2226,7 +2226,7 @@ static void os2fslib_VideoQuit(_THIS)
     // We don't use it, because the PMThread will never stop, or if it stops,
     // it will kill the whole process as a emergency fallback.
     // So, we only check for the iPMThreadStatus stuff!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_VideoQuit] : Waiting for PM thread to die\n"); fflush(stdout);
 #endif
 
@@ -2237,13 +2237,13 @@ static void os2fslib_VideoQuit(_THIS)
       DosSleep(64);
     }
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_VideoQuit] : End of wait.\n"); fflush(stdout);
 #endif
 
     if (_this->hidden->iPMThreadStatus == 1)
     {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[os2fslib_VideoQuit] : Killing PM thread!\n"); fflush(stdout);
 #endif
       
@@ -2252,7 +2252,7 @@ static void os2fslib_VideoQuit(_THIS)
 
       if (_this->hidden->hwndFrame)
       {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
         printf("[os2fslib_VideoQuit] : Destroying PM window!\n"); fflush(stdout);
 #endif
 
@@ -2307,7 +2307,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
   // If there is no more window, nothing we can do!
   if (_this->hidden->iPMThreadStatus!=1) return NULL;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_SetVideoMode] : Request for %dx%d @ %dBPP, flags=0x%x\n", width, height, bpp, flags); fflush(stdout);
 #endif
 
@@ -2329,7 +2329,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
     flags |= SDL_SWSURFACE;
   }
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_SetVideoMode] : Changed request to %dx%d @ %dBPP, flags=0x%x\n", width, height, bpp, flags); fflush(stdout);
 #endif
 
@@ -2363,7 +2363,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
   // If we did not find a good fullscreen mode, then try a similar
   if (!pModeInfoFound)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Requested video mode not found, looking for a similar one!\n"); fflush(stdout);
 #endif
     // Go through the video modes again, and find a similar resolution!
@@ -2392,13 +2392,13 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
   // If we did not find a good fullscreen mode, then return NULL
   if (!pModeInfoFound)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Requested video mode not found!\n"); fflush(stdout);
 #endif
     return NULL;
   }
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_SetVideoMode] : Found mode!\n"); fflush(stdout);
 #endif
 
@@ -2409,7 +2409,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
 
   if (flags & SDL_RESIZABLE)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Requested mode is resizable, changing width/height\n"); fflush(stdout);
 #endif
     // Change width and height to requested one!
@@ -2431,7 +2431,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
 
   if (DosRequestMutexSem(_this->hidden->hmtxUseSrcBuffer, SEM_INDEFINITE_WAIT)==NO_ERROR)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Creating new SW surface\n"); fflush(stdout);
 #endif
 
@@ -2452,7 +2452,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
       return NULL;
     }
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Adjusting pixel format\n"); fflush(stdout);
 #endif
 
@@ -2488,7 +2488,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
     SDL_memcpy(&(_this->hidden->SrcBufferDesc), pModeInfoFound, sizeof(*pModeInfoFound));
     _this->hidden->pchSrcBuffer = pResult->pixels;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Telling FSLib the stuffs\n"); fflush(stdout);
 #endif
 
@@ -2501,7 +2501,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
        )
     {
       bFirstCall = 0;
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[os2fslib_SetVideoMode] : Modifying window size\n"); fflush(stdout);
 #endif
 
@@ -2524,7 +2524,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
     // Set fullscreen mode flag, and switch to fullscreen if needed!
     if (flags & SDL_FULLSCREEN)
     {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[os2fslib_SetVideoMode] : Also trying to switch to fullscreen\n");
       fflush(stdout);
 #endif
@@ -2533,7 +2533,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
       os2fslib_SetCursorManagementFunctions(_this, 0);
     } else
     {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
       printf("[os2fslib_SetVideoMode] : Also trying to switch to desktop mode\n");
       fflush(stdout);
 #endif
@@ -2547,7 +2547,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
     DosReleaseMutexSem(_this->hidden->hmtxUseSrcBuffer);
   } else
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Could not get hmtxUseSrcBuffer!\n"); fflush(stdout);
 #endif
     
@@ -2557,7 +2557,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
   // As we have the new surface, we don't need the current one anymore!
   if ((pResult) && (current))
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Freeing old surface\n"); fflush(stdout);
 #endif
     SDL_FreeSurface(current);
@@ -2569,13 +2569,13 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
   // Now destroy the message queue, if we've created it!
   if (ERRORIDERROR(hmqerror)==0)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_SetVideoMode] : Destroying message queue\n"); fflush(stdout);
 #endif
     WinDestroyMsgQueue(hmq);
   }
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_SetVideoMode] : Done\n"); fflush(stdout);
 #endif
 
@@ -2590,7 +2590,7 @@ static SDL_Surface *os2fslib_SetVideoMode(_THIS, SDL_Surface *current,
  */
 static SDL_Rect **os2fslib_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_ListModes] : ListModes of %d Bpp\n", format->BitsPerPixel);
 #endif
   // Destroy result of previous call, if there is any
@@ -2627,14 +2627,14 @@ static SDL_Rect **os2fslib_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flag
           pRect->y = 0;
           pRect->w = pFSMode->uiXResolution;
           pRect->h = pFSMode->uiYResolution;
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //          printf("!!! Seems to be good!\n");
 //        printf("F: %dx%d\n", pRect->w, pRect->h);
 #endif
           // And insert into list of pRects
           if (!(_this->hidden->pListModesResult))
           {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //            printf("!!! Inserting to beginning\n");
 #endif
 
@@ -2655,7 +2655,7 @@ static SDL_Rect **os2fslib_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flag
             SDL_Rect **pNewList;
             int iPlace, iNumOfSlots, i;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //            printf("!!! Searching where to insert\n");
 #endif
 
@@ -2674,7 +2674,7 @@ static SDL_Rect **os2fslib_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flag
             }
             if (iPlace==-1) iPlace = iNumOfSlots-1;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //            printf("!!! From %d slots, it will be at %d\n", iNumOfSlots, iPlace);
 #endif
 
@@ -2695,7 +2695,7 @@ static SDL_Rect **os2fslib_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flag
       pFSMode = pFSMode->pNext;
     }
   }
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
 //  printf("Returning list\n");
 #endif
   return _this->hidden->pListModesResult;
@@ -2708,7 +2708,7 @@ static int os2fslib_VideoInit(_THIS, SDL_PixelFormat *vformat)
 {
   FSLib_VideoMode_p pDesktopMode;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_VideoInit] : Enter\n"); fflush(stdout);
 #endif
 
@@ -2718,7 +2718,7 @@ static int os2fslib_VideoInit(_THIS, SDL_PixelFormat *vformat)
   if (!pDesktopMode)
   {
     SDL_SetError("Could not query desktop video mode!");
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_VideoInit] : Could not query desktop video mode!\n");
 #endif
     return -1;
@@ -2847,7 +2847,7 @@ static int os2fslib_VideoInit(_THIS, SDL_PixelFormat *vformat)
   _this->hidden->pchSrcBuffer = (char *) SDL_malloc(_this->hidden->pAvailableFSLibVideoModes->uiScanLineSize * _this->hidden->pAvailableFSLibVideoModes->uiYResolution);
   if (!_this->hidden->pchSrcBuffer)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_VideoInit] : Yikes, not enough memory for new video buffer!\n"); fflush(stdout);
 #endif
     SDL_SetError("Not enough memory for new video buffer!\n");
@@ -2861,7 +2861,7 @@ static int os2fslib_VideoInit(_THIS, SDL_PixelFormat *vformat)
   _this->hidden->tidPMThread = _beginthread(PMThreadFunc, NULL, 65536, (void *) _this);
   if (_this->hidden->tidPMThread <= 0)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_VideoInit] : Could not create PM thread!\n");
 #endif
     SDL_SetError("Could not create PM thread");
@@ -2878,7 +2878,7 @@ static int os2fslib_VideoInit(_THIS, SDL_PixelFormat *vformat)
   // report an error!
   if (_this->hidden->iPMThreadStatus!=1)
   {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_VideoInit] : PMThread reported an error : %d\n", _this->hidden->iPMThreadStatus);
 #endif
     SDL_SetError("Error initializing PM thread");
@@ -2891,7 +2891,7 @@ static int os2fslib_VideoInit(_THIS, SDL_PixelFormat *vformat)
 
 static void os2fslib_DeleteDevice(_THIS)
 {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_DeleteDevice]\n"); fflush(stdout);
 #endif
   // Free used memory
@@ -2929,7 +2929,7 @@ static SDL_VideoDevice *os2fslib_CreateDevice(int devindex)
 {
   SDL_VideoDevice *device;
 
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_CreateDevice] : Enter\n"); fflush(stdout);
 #endif
 
@@ -2951,7 +2951,7 @@ static SDL_VideoDevice *os2fslib_CreateDevice(int devindex)
   SDL_memset(device->hidden, 0, (sizeof *device->hidden));
 
   /* Set the function pointers */
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
   printf("[os2fslib_CreateDevice] : VideoInit is %p\n", os2fslib_VideoInit); fflush(stdout);
 #endif
 
@@ -2997,7 +2997,7 @@ static SDL_VideoDevice *os2fslib_CreateDevice(int devindex)
   if (!FSLib_Initialize())
   {
     // Could not initialize FSLib!
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
     printf("[os2fslib_CreateDevice] : Could not initialize FSLib!\n");
 #endif
     SDL_SetError("Could not initialize FSLib!");

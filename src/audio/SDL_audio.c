@@ -162,14 +162,14 @@ int SDLCALL SDL_RunAudio(void *audiop)
 #ifdef USE_DOSSETPRIORITY
         if (SDL_getenv("SDL_USE_TIMECRITICAL_AUDIO"))
         {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
           printf("[SDL_RunAudio] : Setting priority to TimeCritical+0! (TID%d)\n", SDL_ThreadID());
 #endif
           DosSetPriority(PRTYS_THREAD, PRTYC_TIMECRITICAL, 0, 0);
         }
         else
         {
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
           printf("[SDL_RunAudio] : Setting priority to ForegroundServer+0! (TID%d)\n", SDL_ThreadID());
 #endif
           DosSetPriority(PRTYS_THREAD, PRTYC_FOREGROUNDSERVER, 0, 0);
@@ -232,7 +232,7 @@ int SDLCALL SDL_RunAudio(void *audiop)
 	}
 
 #ifdef __OS2__
-#ifdef DEBUG_BUILD
+#ifdef _DEBUG
         printf("[SDL_RunAudio] : Task exiting. (TID%d)\n", SDL_ThreadID());
 #endif
 #endif

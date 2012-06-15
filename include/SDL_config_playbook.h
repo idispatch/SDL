@@ -26,7 +26,7 @@
 #include "SDL_platform.h"
 
 #ifdef _DEBUG
-#define DEBUG_BUILD 1
+#define _DEBUG 1
 #endif
 
 /* This is the PlayBook configuration that can be used to build SDL */

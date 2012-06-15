@@ -361,7 +361,7 @@ void DART_CloseAudio(_THIS)
   rc = mciSendCommand(_this->hidden->iCurrDeviceOrd, MCI_STOP, MCI_WAIT, &GenericParms, 0);
   if (rc!=MCIERR_SUCCESS)
   {
-#ifdef SFX_DEBUG_BUILD
+#ifdef SFX__DEBUG
     printf("Could not stop DART playback!\n");
     fflush(stdout);
 #endif
