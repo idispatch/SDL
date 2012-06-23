@@ -199,6 +199,16 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
+#ifdef ENABLE_RIM_EULA_DIALOG
+    if (BPS_SUCCESS != dialog_request_events(this->hidden->screenContext)) {
+        SDL_SetError("Cannot get dialog events: %s", strerror(errno));
+        bps_shutdown();
+        screen_destroy_event(this->hidden->screenEvent);
+        screen_destroy_context(this->hidden->screenContext);
+        return -1;
+    }
+#endif
+
     rc = screen_get_context_property_iv(this->hidden->screenContext, SCREEN_PROPERTY_DISPLAY_COUNT, &displayCount);
     if (rc || displayCount <= 0) {
         SDL_SetError("Cannot get display count: %s", strerror(errno));

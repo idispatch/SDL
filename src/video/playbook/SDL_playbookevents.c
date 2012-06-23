@@ -33,11 +33,24 @@
 #include <bps/event.h>
 #include <bps/orientation.h>
 #include <bps/navigator.h>
+#ifdef ENABLE_RIM_EULA_DIALOG
+#include <bps/dialog.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <fcntl.h>
+static const char RIM_EULA_STATUS_PATH[] = "data/eula_accepted";
+static const char RIM_EULA_PATH[] = "app/native/assets/eula.txt";
+#endif
 #include "touchcontroloverlay.h"
 
 #define SDLK_PB_TILDE 160 // Conflicts with SDLK_WORLD_0.
 static SDL_keysym Playbook_Keycodes[256];
 static SDLKey *Playbook_specialsyms;
+#ifdef ENABLE_RIM_EULA_DIALOG
+static int eula_dialog_shown = 0; /* 0 = Never been shown; 1 = currently shown; -1 = dismissed */
+static dialog_instance_t eula_dialog = NULL;
+#endif
 
 //#define TOUCHPAD_SIMULATE 1 // Still experimental
 #ifdef TOUCHPAD_SIMULATE
@@ -80,7 +93,6 @@ static void handlePointerEvent(screen_event_t event, screen_window_t window)
         fprintf(stderr, "Detected pointer swipe event: %d,%d\n", coords[0], coords[1]);
         return;
     }
-    //fprintf(stderr, "Pointer: %d,(%d,%d),(%d,%d),%d\n", buttonState, coords[0], coords[1], screen_coords[0], screen_coords[1], wheel_delta);
     if (wheel_delta != 0) {
         int button;
         if ( wheel_delta > 0 )
@@ -710,34 +722,30 @@ static void handleMtouchEvent(screen_event_t event, screen_window_t window, int 
 #endif
 }
 
-void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
+static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
     switch (bps_event_get_code(event))
     {
     case NAVIGATOR_INVOKE:
-        //fprintf(stderr, "Navigator invoke\n");
         break;
     case NAVIGATOR_EXIT:
         SDL_PrivateQuit(); // We can't stop it from closing anyway
         break;
     case NAVIGATOR_WINDOW_STATE:
-    {
-        navigator_window_state_t state = navigator_event_get_window_state(event);
-        switch (state) {
-        case NAVIGATOR_WINDOW_FULLSCREEN:
-            SDL_PrivateAppActive(1, (SDL_APPACTIVE|SDL_APPINPUTFOCUS|SDL_APPMOUSEFOCUS));
-            //fprintf(stderr, "Fullscreen\n");
-            break;
-        case NAVIGATOR_WINDOW_THUMBNAIL:
-            SDL_PrivateAppActive(0, (SDL_APPINPUTFOCUS|SDL_APPMOUSEFOCUS));
-            //fprintf(stderr, "Thumbnail\n"); // TODO: Consider pausing?
-            break;
-        case NAVIGATOR_WINDOW_INVISIBLE:
-            SDL_PrivateAppActive(0, (SDL_APPACTIVE|SDL_APPINPUTFOCUS|SDL_APPMOUSEFOCUS));
-            //fprintf(stderr, "Invisible\n"); // TODO: Consider pausing?
-            break;
+        {
+            navigator_window_state_t state = navigator_event_get_window_state(event);
+            switch (state) {
+            case NAVIGATOR_WINDOW_FULLSCREEN:
+                SDL_PrivateAppActive(1, (SDL_APPACTIVE|SDL_APPINPUTFOCUS|SDL_APPMOUSEFOCUS));
+                break;
+            case NAVIGATOR_WINDOW_THUMBNAIL:
+                SDL_PrivateAppActive(0, (SDL_APPINPUTFOCUS|SDL_APPMOUSEFOCUS));
+                break;
+            case NAVIGATOR_WINDOW_INVISIBLE:
+                SDL_PrivateAppActive(0, (SDL_APPACTIVE|SDL_APPINPUTFOCUS|SDL_APPMOUSEFOCUS));
+                break;
+            }
         }
-    }
         break;
     case NAVIGATOR_SWIPE_DOWN:
         if (this->hidden->tcoControlsDir) {
@@ -757,33 +765,25 @@ void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
         }
         break;
     case NAVIGATOR_SWIPE_START:
-        //fprintf(stderr, "Swipe start\n");
         break;
     case NAVIGATOR_LOW_MEMORY:
-        //fprintf(stderr, "Low memory\n"); // TODO: Anything we can do?
         break;
     case NAVIGATOR_ORIENTATION_CHECK:
-        //fprintf(stderr, "Orientation check\n");
         break;
     case NAVIGATOR_ORIENTATION:
-        //fprintf(stderr, "Navigator orientation\n");
         break;
     case NAVIGATOR_BACK:
-        //fprintf(stderr, "Navigator back\n");
         break;
     case NAVIGATOR_WINDOW_ACTIVE:
-        //fprintf(stderr, "Window active\n"); // TODO: Handle?
         break;
     case NAVIGATOR_WINDOW_INACTIVE:
-        //fprintf(stderr, "Window inactive\n"); // TODO: Handle?
         break;
     default:
-        //fprintf(stderr, "Unknown navigator event: %d\n", bps_event_get_code(event));
         break;
     }
 }
 
-void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
+static void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
     int type;
     screen_event_t se = screen_event_get_event(event);
@@ -825,12 +825,151 @@ void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
     }
 }
 
+#ifdef ENABLE_RIM_EULA_DIALOG
+static void showEULA() {
+    if(eula_dialog!=NULL || eula_dialog_shown != 0) {
+        return;
+    }
+    eula_dialog_shown = -1;
+    /* Did user already accept the EULA? */
+    struct stat s;
+    if(0 == stat(RIM_EULA_STATUS_PATH, &s)) {
+#ifdef _DEBUG
+        fprintf(stderr, "EULA was accepted by user\n");
+        fflush(stderr);
+#endif
+        return;
+    }
+    /* The user did not accept EULA yet */
+    if(errno != ENOENT) {
+#ifdef _DEBUG
+        fprintf(stderr, "EULA stat: %s (%d)\n", strerror(errno), errno);
+        fflush(stderr);
+#endif
+    }
+    /* Read the EULA */
+    char * eula_text = 0;
+#ifdef _DEBUG
+    char current_dir[512];
+    getcwd(current_dir, sizeof(current_dir));
+    fprintf(stderr, "Current working directory: %s\n", current_dir);
+    fflush(stderr);
+#endif
+    int fd = open(RIM_EULA_PATH, O_RDONLY);
+    if(fd == -1) {
+        return;
+    } else {
+        /* Get EULA size */
+        off_t offset = lseek(fd, 0, SEEK_END);
+        if(offset == -1) {
+            close(fd);
+            return;
+        }
+        off_t file_size = offset;
+        eula_text = malloc(file_size + 1);
+        if(eula_text == NULL) {
+            close(fd);
+            return;
+        }
+        offset = lseek(fd, 0, SEEK_SET);
+        if(offset == -1) {
+            free(eula_text);
+            close(fd);
+            return;
+        }
+        /* Read EULA*/
+        if(file_size != read(fd, eula_text, file_size)) {
+            free(eula_text);
+            close(fd);
+            return;
+        }
+        eula_text[file_size] = 0;
+        close(fd);
+    }
+    do {
+        if(dialog_create_alert(&eula_dialog)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_set_size(eula_dialog, DIALOG_SIZE_FULL)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_set_position(eula_dialog, DIALOG_POSITION_MIDDLE_CENTER)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_set_alert_message_text(eula_dialog, eula_text)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_add_button(eula_dialog, "No", true, "no", true)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_add_button(eula_dialog, "Yes", true, "yes", true)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_set_default_button_index(eula_dialog, 1)!=BPS_SUCCESS) {
+            break;
+        }
+        if(dialog_show(eula_dialog)!=BPS_SUCCESS) {
+            break;
+        } else {
+            free(eula_text);
+            eula_dialog_shown = 1;
+            return; /* Do not destroy dialog */
+        }
+    } while(0);
+    free(eula_text);
+    dialog_destroy(eula_dialog);
+    eula_dialog = NULL;
+}
+
+static void handleEULADialogEvent(SDL_VideoDevice *this, bps_event_t * event) {
+    if(event == NULL ||
+       eula_dialog!=dialog_event_get_dialog_instance(event) ||
+       eula_dialog_shown != 1)
+        return;
+    const char * context = dialog_event_get_selected_context(event);
+    dialog_destroy(eula_dialog);
+    eula_dialog = NULL;
+    eula_dialog_shown = -1;
+#ifdef _DEBUG
+    char current_dir[512];
+    getcwd(current_dir, sizeof(current_dir));
+    fprintf(stderr, "Current working directory: %s\n", current_dir);
+    fflush(stderr);
+#endif
+
+    if(strcmp(context, "yes") == 0) {
+        /* Mark the EULA was accepted */
+        int fd = open(RIM_EULA_STATUS_PATH, O_WRONLY | O_CREAT);
+        /* Empty file created */
+        if(fd!=-1) {
+            close(fd);
+        } else {
+#ifdef _DEBUG
+        fprintf(stderr, "Failed to mark EULA as accepted: %s (%d)\n", strerror(errno), errno);
+        fflush(stderr);
+#endif
+        }
+    } else {
+#ifdef _DEBUG
+        fprintf(stderr, "User did not accept EULA\n");
+        fflush(stderr);
+#endif
+        SDL_Quit();
+        exit(0);
+    }
+}
+#endif
+
 void
 PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
 {
-#if 1
-    bps_event_t *event;
-    bps_get_event(&event, 0);
+    bps_event_t * event;
+    if(BPS_SUCCESS != bps_get_event(&event, 0)) {
+        return;
+    }
+#ifdef ENABLE_RIM_EULA_DIALOG
+    showEULA();
+#endif
     while (event)
     {
         int domain = bps_event_get_domain(event);
@@ -840,55 +979,13 @@ PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
         else if (domain == screen_get_domain()) {
             handleScreenEvent(this, event);
         }
-
+#ifdef ENABLE_RIM_EULA_DIALOG
+        else if (domain == dialog_get_domain() && eula_dialog_shown == 1) {
+            handleEULADialogEvent(this, event);
+        }
+#endif
         bps_get_event(&event, 0);
     }
-#else
-    while (1)
-    {
-        int rc = screen_get_event(this->hidden->screenContext, this->hidden->screenEvent, 0 /*timeout*/);
-        if (rc)
-            break;
-
-        int type;
-        rc = screen_get_event_property_iv(this->hidden->screenEvent, SCREEN_PROPERTY_TYPE, &type);
-        if (rc || type == SCREEN_EVENT_NONE)
-            break;
-
-        screen_window_t window;
-        screen_get_event_property_pv(this->hidden->screenEvent, SCREEN_PROPERTY_WINDOW, (void **)&window);
-        if (!window && type != SCREEN_EVENT_KEYBOARD)
-            break;
-
-        switch (type)
-        {
-        case SCREEN_EVENT_CLOSE:
-            SDL_PrivateQuit(); // We can't stop it from closing anyway
-            break;
-        case SCREEN_EVENT_PROPERTY:
-            {
-                int val;
-                screen_get_event_property_iv(this->hidden->screenEvent, SCREEN_PROPERTY_NAME, &val);
-
-                //fprintf(stderr, "Property change (property val=%d)\n", val);
-            }
-            break;
-        case SCREEN_EVENT_POINTER:
-            handlePointerEvent(this->hidden->screenEvent, window);
-            break;
-        case SCREEN_EVENT_KEYBOARD:
-            handleKeyboardEvent(this->hidden->screenEvent);
-            break;
-        case SCREEN_EVENT_MTOUCH_TOUCH:
-        case SCREEN_EVENT_MTOUCH_MOVE:
-        case SCREEN_EVENT_MTOUCH_RELEASE:
-            //handleMtouchEvent(this->hidden->screenEvent, window, type);
-            emulate_touch(this->hidden->emu_context, this->hidden->screenEvent);
-            break;
-        }
-    }
-#endif
-
 #ifdef TOUCHPAD_SIMULATE
     if (state.pending[0] || state.pending[1]) {
         SDL_PrivateMouseMotion(state.mask, 1, state.pending[0], state.pending[1]);
@@ -989,6 +1086,4 @@ void PLAYBOOK_InitOSKeymap(SDL_VideoDevice *this)
      */
 #endif
 }
-
-/* end of SDL_playbookevents.c ... */
 
