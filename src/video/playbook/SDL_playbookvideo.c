@@ -175,8 +175,16 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != navigator_rotation_lock(true)) {
+    if (BPS_SUCCESS != navigator_rotation_lock(false)) {
         SDL_SetError("Cannot set rotation lock: %s", strerror(errno));
+        bps_shutdown();
+        screen_destroy_event(this->hidden->screenEvent);
+        screen_destroy_context(this->hidden->screenContext);
+        return -1;
+    }
+
+    if (BPS_SUCCESS != navigator_extend_timeout(120000, 0)) {
+        SDL_SetError("Cannot extend timeout: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
         screen_destroy_context(this->hidden->screenContext);
@@ -198,16 +206,6 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         screen_destroy_context(this->hidden->screenContext);
         return -1;
     }
-
-#ifdef ENABLE_RIM_EULA_DIALOG
-    if (BPS_SUCCESS != dialog_request_events(this->hidden->screenContext)) {
-        SDL_SetError("Cannot get dialog events: %s", strerror(errno));
-        bps_shutdown();
-        screen_destroy_event(this->hidden->screenEvent);
-        screen_destroy_context(this->hidden->screenContext);
-        return -1;
-    }
-#endif
 
     rc = screen_get_context_property_iv(this->hidden->screenContext, SCREEN_PROPERTY_DISPLAY_COUNT, &displayCount);
     if (rc || displayCount <= 0) {
@@ -302,7 +300,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
     /* There is no window manager to talk to */
     this->info.wm_available = 0;
 
-    /* Full screen size is 1024x600 */
+    /* Full screen size is screenResolution */
     this->info.current_w = screenResolution[0];
     this->info.current_h = screenResolution[1];
 

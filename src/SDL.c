@@ -210,7 +210,7 @@ Uint32 SDL_WasInit(Uint32 flags) {
 void SDL_Quit(void) {
     /* Quit all subsystems */
 #ifdef _DEBUG
-    printf("[SDL_Quit] : Enter! Calling QuitSubSystem()\n");
+    printf("[SDL_Quit] : Enter! Calling  QuitSubSystem()\n");
     fflush(stdout);
 #endif
     SDL_QuitSubSystem(SDL_INIT_EVERYTHING);

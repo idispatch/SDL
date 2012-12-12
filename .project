@@ -3,7 +3,6 @@
 	<name>SDL12</name>
 	<comment></comment>
 	<projects>
-		<project>TouchControlOverlay</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

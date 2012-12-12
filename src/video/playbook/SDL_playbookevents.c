@@ -33,24 +33,11 @@
 #include <bps/event.h>
 #include <bps/orientation.h>
 #include <bps/navigator.h>
-#ifdef ENABLE_RIM_EULA_DIALOG
-#include <bps/dialog.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <fcntl.h>
-static const char RIM_EULA_STATUS_PATH[] = "data/eula_accepted";
-static const char RIM_EULA_PATH[] = "app/native/assets/eula.txt";
-#endif
 #include "touchcontroloverlay.h"
 
 #define SDLK_PB_TILDE 160 // Conflicts with SDLK_WORLD_0.
 static SDL_keysym Playbook_Keycodes[256];
 static SDLKey *Playbook_specialsyms;
-#ifdef ENABLE_RIM_EULA_DIALOG
-static int eula_dialog_shown = 0; /* 0 = Never been shown; 1 = currently shown; -1 = dismissed */
-static dialog_instance_t eula_dialog = NULL;
-#endif
 
 //#define TOUCHPAD_SIMULATE 1 // Still experimental
 #ifdef TOUCHPAD_SIMULATE
@@ -778,6 +765,66 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
         break;
     case NAVIGATOR_WINDOW_INACTIVE:
         break;
+    case NAVIGATOR_ORIENTATION_DONE:
+        break;
+    case NAVIGATOR_ORIENTATION_RESULT:
+        break;
+    case NAVIGATOR_WINDOW_LOCK:
+        break;
+    case NAVIGATOR_WINDOW_UNLOCK:
+        break;
+    case NAVIGATOR_INVOKE_TARGET:
+        break;
+    case NAVIGATOR_INVOKE_QUERY_RESULT:
+        break;
+    case NAVIGATOR_INVOKE_VIEWER:
+        break;
+    case NAVIGATOR_INVOKE_TARGET_RESULT:
+        break;
+    case NAVIGATOR_INVOKE_VIEWER_RESULT:
+        break;
+    case NAVIGATOR_INVOKE_VIEWER_RELAY:
+        break;
+    case NAVIGATOR_INVOKE_VIEWER_STOPPED:
+        break;
+    case NAVIGATOR_KEYBOARD_STATE:
+        break;
+    case NAVIGATOR_KEYBOARD_POSITION:
+        break;
+    case NAVIGATOR_INVOKE_VIEWER_RELAY_RESULT:
+        break;
+    case NAVIGATOR_DEVICE_LOCK_STATE:
+        break;
+    case NAVIGATOR_WINDOW_COVER:
+        break;
+    case NAVIGATOR_WINDOW_COVER_ENTER:
+        break;
+    case NAVIGATOR_WINDOW_COVER_EXIT:
+        break;
+    case NAVIGATOR_CARD_PEEK_STARTED:
+        break;
+    case NAVIGATOR_CARD_PEEK_STOPPED:
+        break;
+    case NAVIGATOR_CARD_RESIZE:
+        break;
+    case NAVIGATOR_CHILD_CARD_CLOSED:
+        break;
+    case NAVIGATOR_CARD_CLOSED:
+        break;
+    case NAVIGATOR_INVOKE_GET_FILTERS_RESULT:
+        break;
+    case NAVIGATOR_APP_STATE:
+        break;
+    case NAVIGATOR_INVOKE_SET_FILTERS_RESULT:
+        break;
+    case NAVIGATOR_PEEK_STARTED:
+        break;
+    case NAVIGATOR_PEEK_STOPPED:
+        break;
+    case NAVIGATOR_CARD_READY_CHECK:
+        break;
+    case NAVIGATOR_POOLED:
+        break;
     default:
         break;
     }
@@ -825,141 +872,6 @@ static void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
     }
 }
 
-#ifdef ENABLE_RIM_EULA_DIALOG
-static void showEULA() {
-    if(eula_dialog!=NULL || eula_dialog_shown != 0) {
-        return;
-    }
-    eula_dialog_shown = -1;
-    /* Did user already accept the EULA? */
-    struct stat s;
-    if(0 == stat(RIM_EULA_STATUS_PATH, &s)) {
-#ifdef _DEBUG
-        fprintf(stderr, "EULA was accepted by user\n");
-        fflush(stderr);
-#endif
-        return;
-    }
-    /* The user did not accept EULA yet */
-    if(errno != ENOENT) {
-#ifdef _DEBUG
-        fprintf(stderr, "EULA stat: %s (%d)\n", strerror(errno), errno);
-        fflush(stderr);
-#endif
-    }
-    /* Read the EULA */
-    char * eula_text = 0;
-#ifdef _DEBUG
-    char current_dir[512];
-    getcwd(current_dir, sizeof(current_dir));
-    fprintf(stderr, "Current working directory: %s\n", current_dir);
-    fflush(stderr);
-#endif
-    int fd = open(RIM_EULA_PATH, O_RDONLY);
-    if(fd == -1) {
-        return;
-    } else {
-        /* Get EULA size */
-        off_t offset = lseek(fd, 0, SEEK_END);
-        if(offset == -1) {
-            close(fd);
-            return;
-        }
-        off_t file_size = offset;
-        eula_text = malloc(file_size + 1);
-        if(eula_text == NULL) {
-            close(fd);
-            return;
-        }
-        offset = lseek(fd, 0, SEEK_SET);
-        if(offset == -1) {
-            free(eula_text);
-            close(fd);
-            return;
-        }
-        /* Read EULA*/
-        if(file_size != read(fd, eula_text, file_size)) {
-            free(eula_text);
-            close(fd);
-            return;
-        }
-        eula_text[file_size] = 0;
-        close(fd);
-    }
-    do {
-        if(dialog_create_alert(&eula_dialog)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_set_size(eula_dialog, DIALOG_SIZE_FULL)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_set_position(eula_dialog, DIALOG_POSITION_MIDDLE_CENTER)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_set_alert_message_text(eula_dialog, eula_text)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_add_button(eula_dialog, "No", true, "no", true)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_add_button(eula_dialog, "Yes", true, "yes", true)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_set_default_button_index(eula_dialog, 1)!=BPS_SUCCESS) {
-            break;
-        }
-        if(dialog_show(eula_dialog)!=BPS_SUCCESS) {
-            break;
-        } else {
-            free(eula_text);
-            eula_dialog_shown = 1;
-            return; /* Do not destroy dialog */
-        }
-    } while(0);
-    free(eula_text);
-    dialog_destroy(eula_dialog);
-    eula_dialog = NULL;
-}
-
-static void handleEULADialogEvent(SDL_VideoDevice *this, bps_event_t * event) {
-    if(event == NULL ||
-       eula_dialog!=dialog_event_get_dialog_instance(event) ||
-       eula_dialog_shown != 1)
-        return;
-    const char * context = dialog_event_get_selected_context(event);
-    dialog_destroy(eula_dialog);
-    eula_dialog = NULL;
-    eula_dialog_shown = -1;
-#ifdef _DEBUG
-    char current_dir[512];
-    getcwd(current_dir, sizeof(current_dir));
-    fprintf(stderr, "Current working directory: %s\n", current_dir);
-    fflush(stderr);
-#endif
-
-    if(strcmp(context, "yes") == 0) {
-        /* Mark the EULA was accepted */
-        int fd = open(RIM_EULA_STATUS_PATH, O_WRONLY | O_CREAT);
-        /* Empty file created */
-        if(fd!=-1) {
-            close(fd);
-        } else {
-#ifdef _DEBUG
-        fprintf(stderr, "Failed to mark EULA as accepted: %s (%d)\n", strerror(errno), errno);
-        fflush(stderr);
-#endif
-        }
-    } else {
-#ifdef _DEBUG
-        fprintf(stderr, "User did not accept EULA\n");
-        fflush(stderr);
-#endif
-        SDL_Quit();
-        exit(0);
-    }
-}
-#endif
-
 void
 PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
 {
@@ -967,9 +879,6 @@ PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
     if(BPS_SUCCESS != bps_get_event(&event, 0)) {
         return;
     }
-#ifdef ENABLE_RIM_EULA_DIALOG
-    showEULA();
-#endif
     while (event)
     {
         int domain = bps_event_get_domain(event);
@@ -979,11 +888,6 @@ PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
         else if (domain == screen_get_domain()) {
             handleScreenEvent(this, event);
         }
-#ifdef ENABLE_RIM_EULA_DIALOG
-        else if (domain == dialog_get_domain() && eula_dialog_shown == 1) {
-            handleEULADialogEvent(this, event);
-        }
-#endif
         bps_get_event(&event, 0);
     }
 #ifdef TOUCHPAD_SIMULATE
