@@ -175,7 +175,7 @@ void SDL_SetCursor (SDL_Cursor *cursor)
 		return;
 	}
 
-#ifdef __PLAYBOOK__ // FIXME: Hack to prevent cursor drawing in OpenGL.
+#ifdef __BLACKBERRY__ // FIXME: Hack to prevent cursor drawing in OpenGL.
 	if (video->screen->flags & SDL_OPENGL)
 		return;
 #endif

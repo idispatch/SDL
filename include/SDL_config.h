@@ -38,7 +38,7 @@
 #include "SDL_config_win32.h"
 #elif defined(__OS2__)
 #include "SDL_config_os2.h"
-#elif defined(__PLAYBOOK__)
+#elif defined(__BLACKBERRY__)
 #include "SDL_config_playbook.h"
 #else
 #include "SDL_config_minimal.h"

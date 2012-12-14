@@ -40,7 +40,7 @@ EXTRA_SRCVPATH += $(PROJECT_ROOT)/src/timer/unix
 EXTRA_SRCVPATH += $(PROJECT_ROOT)/src/video
 EXTRA_SRCVPATH += $(PROJECT_ROOT)/src/video/playbook
 
-CCFLAGS += -D__PLAYBOOK__
+CCFLAGS += -D__BLACKBERRY__
 
 include $(MKFILES_ROOT)/qmacros.mk
 ifndef QNX_INTERNAL
