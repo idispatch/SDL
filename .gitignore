@@ -2,4 +2,7 @@ Device-Debug
 Device-Release
 Simulator-Debug
 .settings
-
+*.o
+*.a
+*.pinfo
+.DS_Store
