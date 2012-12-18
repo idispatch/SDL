@@ -255,6 +255,7 @@ error1:
     return 0; // Failed to initialize
 }
 
+#if 0
 static SDL_Palette *AllocatePalette(int size)
 {
   SDL_Palette *palette;
@@ -279,6 +280,7 @@ static SDL_Palette *AllocatePalette(int size)
 
   return palette;
 }
+#endif
 
 SDL_Surface *PLAYBOOK_8Bit_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
                 int width, int height, int bpp, Uint32 flags)
@@ -407,10 +409,7 @@ SDL_Surface *PLAYBOOK_8Bit_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *curr
             goto error5;
         }
 
-        locateTCOControlFile(this);
-        if (this->hidden->tcoControlsDir) {
-            initializeOverlay(this, screenWindow);
-        }
+        initialize_touch_controls(this, screenWindow);
 
         this->hidden->screenWindow = screenWindow;
     } else {
@@ -461,28 +460,6 @@ error1:
     return NULL;
 }
 
-static const unsigned sampleDuration = 100;
-static unsigned frameCounter = 0;
-static double lastSampledTime = 0;
-static double getTime()
-{
-    struct timespec tm;
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    return tm.tv_sec * 1000.0f + tm.tv_nsec / 1000000.0f;
-}
-
-static void printFPS()
-{
-    double diff = getTime() - lastSampledTime;
-    if (diff > sampleDuration) {
-        double rawFPS = frameCounter / (diff/1000);
-        unsigned sampleFPS = (unsigned)((rawFPS*100)/100);
-        frameCounter = 0;
-        lastSampledTime = getTime();
-        fprintf(stderr, "FPS: %u\n", sampleFPS);
-    }
-}
-
 void PLAYBOOK_8Bit_UpdateRects(SDL_VideoDevice *this, int numrects, SDL_Rect *rects)
 {
     if (!this || !this->hidden || !this->hidden->surface)
@@ -492,7 +469,6 @@ void PLAYBOOK_8Bit_UpdateRects(SDL_VideoDevice *this, int numrects, SDL_Rect *re
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, this->hidden->glInfo.screen[this->hidden->glInfo.writableScreen]);
     this->hidden->glInfo.writableScreen = !this->hidden->glInfo.writableScreen;
-    int i=0;
 
     // TODO: Need to respect the rects, rather than always update full screen.
 
@@ -561,10 +537,12 @@ void PLAYBOOK_8Bit_VideoQuit(SDL_VideoDevice *this)
     screen_stop_events(this->hidden->screenContext);
     screen_destroy_event(this->hidden->screenEvent);
     screen_destroy_context(this->hidden->screenContext);
-    bps_shutdown();
-    if (this->hidden->tcoControlsDir) {
-        tco_shutdown(this->hidden->emu_context);
+
+    if (this->hidden->tco_context) {
+        tco_shutdown(this->hidden->tco_context);
+        this->hidden->tco_context = NULL;
     }
+    bps_shutdown();
     this->screen = 0;
 }
 

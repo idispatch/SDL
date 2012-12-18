@@ -178,10 +178,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
         goto error5;
     }
 
-    locateTCOControlFile(this);
-    if (this->hidden->tcoControlsDir) {
-        initializeOverlay(this, screenWindow);
-    }
+    initialize_touch_controls(this, screenWindow);
 
     this->hidden->screenWindow = screenWindow;
 

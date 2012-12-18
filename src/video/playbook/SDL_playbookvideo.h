@@ -26,6 +26,7 @@
 
 #include "../SDL_sysvideo.h"
 #include <screen/screen.h>
+#include "touchcontroloverlay.h"
 
 #define SDL_NUMMODES 7
 
@@ -34,8 +35,7 @@
 struct SDL_PrivateVideoData {
     int w, h;
     void *buffer;
-    void *emu_context;
-    char *tcoControlsDir;
+    tco_context_t tco_context;
     screen_context_t screenContext;
     screen_event_t screenEvent;
     screen_window_t screenWindow;

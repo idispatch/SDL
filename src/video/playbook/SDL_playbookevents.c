@@ -346,6 +346,8 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
     case SDLK_SPACE:
         keysym->scancode = 57;
         break;
+    default:
+        break;
     }
 
     switch (keysym->sym)
@@ -533,6 +535,8 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
     case SDLK_QUOTE:
         keysym->unicode = '\'';
         break;
+    default:
+        break;
     }
     keysym->mod = KMOD_NONE;
     return shifted;
@@ -685,14 +689,6 @@ static void handleMtouchEvent(screen_event_t event, screen_window_t window, int 
     screen_get_event_property_llv(event, SCREEN_PROPERTY_TIMESTAMP, (long long*)&timestamp);
     screen_get_event_property_iv(event, SCREEN_PROPERTY_SEQUENCE_ID, (int*)&sequenceId);
 
-//    char typeChar = 'D';
-//    if (type == SCREEN_EVENT_MTOUCH_RELEASE)
-//        typeChar = 'U';
-//    else if (type == SCREEN_EVENT_MTOUCH_MOVE)
-//        typeChar = 'M';
-//
-//    fprintf(stderr, "Touch %d: (%d,%d) %c\n", contactId, pos[0], pos[1], typeChar);
-
     if (pos[1] < 0) {
         fprintf(stderr, "Detected swipe event: %d,%d\n", pos[0], pos[1]);
         return;
@@ -734,10 +730,7 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
             }
         }
         break;
-    case NAVIGATOR_SWIPE_DOWN:
-        if (this->hidden->tcoControlsDir) {
-            tco_swipedown(this->hidden->emu_context, this->hidden->screenWindow);
-        } else {
+    case NAVIGATOR_SWIPE_DOWN: {
             SDL_Event event;
             SDL_UserEvent userevent;
 
@@ -833,13 +826,13 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
 static void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
     int type;
-    screen_event_t se = screen_event_get_event(event);
-    int rc = screen_get_event_property_iv(se, SCREEN_PROPERTY_TYPE, &type);
+    screen_event_t screen_event = screen_event_get_event(event);
+    int rc = screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TYPE, &type);
     if (rc || type == SCREEN_EVENT_NONE)
         return;
 
     screen_window_t window;
-    screen_get_event_property_pv(se, SCREEN_PROPERTY_WINDOW, (void **)&window);
+    screen_get_event_property_pv(screen_event, SCREEN_PROPERTY_WINDOW, (void **)&window);
     if (!window && type != SCREEN_EVENT_KEYBOARD)
         return;
 
@@ -851,23 +844,19 @@ static void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
         case SCREEN_EVENT_PROPERTY:
             {
                 int val;
-                screen_get_event_property_iv(se, SCREEN_PROPERTY_NAME, &val);
+                screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_NAME, &val);
             }
             break;
         case SCREEN_EVENT_POINTER:
-            handlePointerEvent(se, window);
+            handlePointerEvent(screen_event, window);
             break;
         case SCREEN_EVENT_KEYBOARD:
-            handleKeyboardEvent(se);
+            handleKeyboardEvent(screen_event);
             break;
         case SCREEN_EVENT_MTOUCH_TOUCH:
         case SCREEN_EVENT_MTOUCH_MOVE:
         case SCREEN_EVENT_MTOUCH_RELEASE:
-            if (this->hidden->tcoControlsDir) {
-                tco_touch(this->hidden->emu_context, se);
-            } else {
-                handleMtouchEvent(se, window, type);
-            }
+            handleMtouchEvent(screen_event, window, type);
             break;
     }
 }
@@ -875,20 +864,44 @@ static void handleScreenEvent(SDL_VideoDevice *this, bps_event_t *event)
 void
 PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
 {
-    bps_event_t * event;
-    if(BPS_SUCCESS != bps_get_event(&event, 0)) {
-        return;
-    }
-    while (event)
+    while (true)
     {
-        int domain = bps_event_get_domain(event);
-        if (domain == navigator_get_domain()) {
-            handleNavigatorEvent(this, event);
+        const int event_timeout = 0;
+        bps_event_t * event = NULL;
+        if(BPS_SUCCESS != bps_get_event(&event, event_timeout)) {
+            return;
         }
-        else if (domain == screen_get_domain()) {
-            handleScreenEvent(this, event);
+        if(!event) {
+            tco_handle_events(this->hidden->tco_context,
+                              this->hidden->screenWindow,
+                              event);
+            return;
         }
-        bps_get_event(&event, 0);
+
+        int result = tco_handle_events(this->hidden->tco_context,
+                                       this->hidden->screenWindow,
+                                       event);
+        switch(result) {
+        case TCO_SUCCESS:
+            /* TCO handled the event */
+            continue;
+        case TCO_FAILURE:
+            /* TCO failed to handle the event */
+            return;
+        case TCO_UNHANDLED:
+        default:
+            {
+                /* TCO did not handle the event */
+                int domain = bps_event_get_domain(event);
+                if (domain == navigator_get_domain()) {
+                    handleNavigatorEvent(this, event);
+                }
+                else if (domain == screen_get_domain()) {
+                    handleScreenEvent(this, event);
+                }
+            }
+            continue;
+        }
     }
 #ifdef TOUCHPAD_SIMULATE
     if (state.pending[0] || state.pending[1]) {

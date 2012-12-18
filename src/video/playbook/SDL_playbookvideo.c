@@ -344,8 +344,9 @@ screen_window_t PLAYBOOK_CreateWindow(SDL_VideoDevice *this, SDL_Surface *curren
     } else {
         if (current->hwdata)
             SDL_free(current->hwdata);
-        if (this->hidden->tcoControlsDir) {
-            tco_shutdown(this->hidden->emu_context);
+        if (this->hidden->tco_context) {
+            tco_shutdown(this->hidden->tco_context);
+            this->hidden->tco_context = NULL;
         }
         screen_destroy_window_buffers(this->hidden->screenWindow);
         screenWindow = this->hidden->screenWindow;
@@ -512,10 +513,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
         return NULL;
     }
 
-    locateTCOControlFile(this);
-    if (this->hidden->tcoControlsDir) {
-        initializeOverlay(this, screenWindow);
-    }
+    initialize_touch_controls(this, screenWindow);
 
     this->hidden->frontBuffer = windowBuffer[0];
     this->hidden->screenWindow = screenWindow;
@@ -588,9 +586,11 @@ void PLAYBOOK_VideoQuit(SDL_VideoDevice *this)
     screen_stop_events(this->hidden->screenContext);
     screen_destroy_event(this->hidden->screenEvent);
     screen_destroy_context(this->hidden->screenContext);
-    bps_shutdown();
-    if (this->hidden->tcoControlsDir) {
-        tco_shutdown(this->hidden->emu_context);
+
+    if (this->hidden->tco_context) {
+        tco_shutdown(this->hidden->tco_context);
+        this->hidden->tco_context = NULL;
     }
     this->screen = 0;
+    bps_shutdown();
 }
