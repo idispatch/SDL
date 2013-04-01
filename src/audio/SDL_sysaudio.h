@@ -46,18 +46,18 @@ struct SDL_AudioDevice {
 
 	/* * * */
 	/* Public driver functions */
-	int  (*OpenAudio)(_THIS, SDL_AudioSpec *spec);
-	void (*ThreadInit)(_THIS);	/* Called by audio thread at start */
-	void (*WaitAudio)(_THIS);
-	void (*PlayAudio)(_THIS);
-	Uint8 *(*GetAudioBuf)(_THIS);
-	void (*WaitDone)(_THIS);
-	void (*CloseAudio)(_THIS);
+	int  (*OpenAudio)(SDL_AudioDevice *_this, SDL_AudioSpec *spec);
+	void (*ThreadInit)(SDL_AudioDevice *_this);	/* Called by audio thread at start */
+	void (*WaitAudio)(SDL_AudioDevice *_this);
+	void (*PlayAudio)(SDL_AudioDevice *_this);
+	Uint8 *(*GetAudioBuf)(SDL_AudioDevice *_this);
+	void (*WaitDone)(SDL_AudioDevice *_this);
+	void (*CloseAudio)(SDL_AudioDevice *_this);
 
 	/* * * */
 	/* Lock / Unlock functions added for the Mac port */
-	void (*LockAudio)(_THIS);
-	void (*UnlockAudio)(_THIS);
+	void (*LockAudio)(SDL_AudioDevice *_this);
+	void (*UnlockAudio)(SDL_AudioDevice *_this);
 
 	/* * * */
 	/* Data common to all devices */
@@ -89,7 +89,7 @@ struct SDL_AudioDevice {
 
 	/* * * */
 	/* The function used to dispose of this structure */
-	void (*free)(_THIS);
+	void (*free)(SDL_AudioDevice *_this);
 };
 #undef _THIS
 
@@ -175,7 +175,7 @@ extern AudioBootStrap MMEAUDIO_bootstrap;
 extern AudioBootStrap DART_bootstrap;
 #endif
 #if SDL_AUDIO_DRIVER_EPOCAUDIO
-extern AudioBootStrap EPOCAudio_bootstrap; 
+extern AudioBootStrap EPOCAudio_bootstrap;
 #endif
 #if SDL_AUDIO_DRIVER_PLAYBOOK
 extern AudioBootStrap PLAYBOOK_AUD_bootstrap;

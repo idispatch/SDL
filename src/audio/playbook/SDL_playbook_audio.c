@@ -44,9 +44,6 @@ static void DEBUG_doNothing (FILE * fd, char *format, ...) {
 
 
 #define DEBUG_printf DEBUG_doNothing
-//#define DEBUG_printf fprintf
-
-//#define ACTUALLY_DO_DISK
 
 /* The tag name used by Anthony's asound audio */
 #define PLAYBOOK_AUD_DRIVER_NAME         "anhu"
@@ -56,11 +53,11 @@ static void DEBUG_doNothing (FILE * fd, char *format, ...) {
 #define PLAYBOOK_DEFAULT_WRITEDELAY   150
 
 /* Audio driver functions */
-static int PLAYBOOK_AUD_OpenAudio(_THIS, SDL_AudioSpec *spec);
-static void PLAYBOOK_AUD_WaitAudio(_THIS);
-static void PLAYBOOK_AUD_PlayAudio(_THIS);
-static Uint8 *PLAYBOOK_AUD_GetAudioBuf(_THIS);
-static void PLAYBOOK_AUD_CloseAudio(_THIS);
+static int PLAYBOOK_AUD_OpenAudio(SDL_AudioDevice *this, SDL_AudioSpec *spec);
+static void PLAYBOOK_AUD_WaitAudio(SDL_AudioDevice *this);
+static void PLAYBOOK_AUD_PlayAudio(SDL_AudioDevice *this);
+static Uint8 *PLAYBOOK_AUD_GetAudioBuf(SDL_AudioDevice *this);
+static void PLAYBOOK_AUD_CloseAudio(SDL_AudioDevice *this);
 
 #ifdef ACTUALLY_DO_DISK
 static const char *PLAYBOOK_AUD_GetOutputFilename(void)
@@ -74,7 +71,6 @@ static int PLAYBOOK_AUD_Available(void)
     return(1);
 }
 
-
 static void PLAYBOOK_AUD_DeleteDevice(SDL_AudioDevice *device)
 {
     SDL_free(device->hidden);
@@ -84,7 +80,6 @@ static void PLAYBOOK_AUD_DeleteDevice(SDL_AudioDevice *device)
 static SDL_AudioDevice *PLAYBOOK_AUD_CreateDevice(int devindex)
 {
     SDL_AudioDevice *this;
-    const char *envr;
 
     /* Initialize all variables that we clean on shutdown */
     this = (SDL_AudioDevice *)SDL_malloc(sizeof(SDL_AudioDevice));
@@ -123,7 +118,7 @@ AudioBootStrap PLAYBOOK_AUD_bootstrap = {
 };
 
 /* This function waits until it is possible to write a full sound buffer */
-static void PLAYBOOK_AUD_WaitAudio(_THIS)
+static void PLAYBOOK_AUD_WaitAudio(SDL_AudioDevice *this)
 {
     fd_set  rfds, wfds;
     int nflds;
@@ -167,7 +162,7 @@ static void PLAYBOOK_AUD_WaitAudio(_THIS)
 
 }
 
-static void PLAYBOOK_AUD_PlayAudio(_THIS)
+static void PLAYBOOK_AUD_PlayAudio(SDL_AudioDevice *this)
 {
     int written;
     fd_set  wfds;
@@ -202,12 +197,12 @@ static void PLAYBOOK_AUD_PlayAudio(_THIS)
     }
 }
 
-static Uint8 *PLAYBOOK_AUD_GetAudioBuf(_THIS)
+static Uint8 *PLAYBOOK_AUD_GetAudioBuf(SDL_AudioDevice *this)
 {
     return(this->hidden->mixbuf);
 }
 
-static void PLAYBOOK_AUD_CloseAudio(_THIS)
+static void PLAYBOOK_AUD_CloseAudio(SDL_AudioDevice *this)
 {
     snd_pcm_plugin_flush (this->hidden->pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
     snd_mixer_close (this->hidden->mixer_handle);
@@ -227,35 +222,20 @@ static void PLAYBOOK_AUD_CloseAudio(_THIS)
 #endif
 }
 
-static int PLAYBOOK_AUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
+static int PLAYBOOK_AUD_OpenAudio(SDL_AudioDevice *this, SDL_AudioSpec *spec)
 {
-
-#ifdef ACTUALLY_DO_DISK
-    const char *fname = PLAYBOOK_AUD_GetOutputFilename();
-#endif
-
     int     card = -1;
     int     dev = 0;
-    FILE   *file1;
-    int     mSamples;
     int     mSampleRate = spec->freq;
     int     mSampleChannels = spec->channels;
-    int     mSampleBits;
-    char   *mSampleBfr1;
     int     fragsize = -1;
-    int     verbose = 0;
 
     int     rtn;
     snd_pcm_channel_info_t pi;
     snd_mixer_group_t group;
     snd_pcm_channel_params_t pp;
     snd_pcm_channel_setup_t setup;
-    int     bsize, n, N = 0, c;
-    uint32_t voice_mask[] = { 0, 0, 0, 0 };
-    snd_pcm_voice_conversion_t voice_conversion;
-    int     voice_override = 0;
     int     num_frags = -1;
-    char   *sub_opts, *value;
 
     DEBUG_printf(stderr, "WARNING: You are using Anthony's SDL playbook hack audio driver\n");
 
@@ -277,7 +257,6 @@ static int PLAYBOOK_AUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     }
     SDL_memset(this->hidden->mixbuf, spec->silence, spec->size);
 
-
     //below here is where we actually do pb stuff.
     // FIXME: Use SDL_SetError to record errors instead of DEBUG_printf.
     if ((rtn = snd_pcm_open_preferred(&this->hidden->pcm_handle, &card, &dev, SND_PCM_OPEN_PLAYBACK)) < 0)
@@ -287,8 +266,8 @@ static int PLAYBOOK_AUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     }
 
     /* disabling mmap is not actually required in this example but it is included to
-         * demonstrate how it is used when it is required.
-         */
+     * demonstrate how it is used when it is required.
+     */
     if ((rtn = snd_pcm_plugin_set_disable (this->hidden->pcm_handle, PLUGIN_DISABLE_MMAP)) < 0)
     {
         DEBUG_printf (stderr, "snd_pcm_plugin_set_disable failed: %s\n", snd_strerror (rtn));
@@ -363,7 +342,6 @@ static int PLAYBOOK_AUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     DEBUG_printf (stderr, "Total Frags %d \n", setup.buf.block.frags);
     DEBUG_printf (stderr, "Rate %d \n", setup.format.rate);
     DEBUG_printf (stderr, "Voices %d \n", setup.format.voices);
-    bsize = setup.buf.block.frag_size;
 
     if (group.gid.name[0] == 0)
     {
