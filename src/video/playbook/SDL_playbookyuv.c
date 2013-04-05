@@ -21,7 +21,6 @@ static struct private_yuvhwfuncs PLAYBOOK_yuvfuncs =
 SDL_Overlay* PLAYBOOK_CreateYUVOverlay(SDL_VideoDevice *this, int width, int height, Uint32 format, SDL_Surface* display)
 {
     SDL_Overlay* overlay;
-    struct private_yuvhwdata* hwdata;
     int screenFormat = 0;
     fprintf(stderr, "Creating YUV overlay: %dx%d\n", width, height);
 

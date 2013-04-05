@@ -161,21 +161,25 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
     {
     case SDLK_EXCLAIM:
         shifted = 1;
+        //no break here
     case SDLK_1:
         keysym->scancode = 2;
         break;
     case SDLK_AT:
         shifted = 1;
+        //no break here
     case SDLK_2:
         keysym->scancode = 3;
         break;
     case SDLK_HASH:
         shifted = 1;
+        //no break here
     case SDLK_3:
         keysym->scancode = 4;
         break;
     case SDLK_DOLLAR:
         shifted = 1;
+        //no break here
     case SDLK_4:
         keysym->scancode = 5;
         break;
@@ -184,36 +188,43 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
         break;
     case SDLK_CARET:
         shifted = 1;
+        //no break here
     case SDLK_6:
         keysym->scancode = 7;
         break;
     case SDLK_AMPERSAND:
         shifted = 1;
+        //no break here
     case SDLK_7:
         keysym->scancode = 8;
         break;
     case SDLK_ASTERISK:
         shifted = 1;
+        //no break here
     case SDLK_8:
         keysym->scancode = 9;
         break;
     case SDLK_LEFTPAREN:
         shifted = 1;
+        //no break here
     case SDLK_9:
         keysym->scancode = 10;
         break;
     case SDLK_RIGHTPAREN:
         shifted = 1;
+        //no break here
     case SDLK_0:
         keysym->scancode = 11;
         break;
     case SDLK_UNDERSCORE:
         shifted = 1;
+        //no break here
     case SDLK_MINUS:
         keysym->scancode = 12;
         break;
     case SDLK_PLUS:
         shifted = 1;
+        //no break here
     case SDLK_EQUALS:
         keysym->scancode = 13;
         break;
@@ -291,16 +302,19 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
         break;
     case SDLK_COLON:
         shifted = 1;
+        //no break here
     case SDLK_SEMICOLON:
         keysym->scancode = 39;
         break;
     case SDLK_QUOTEDBL:
         shifted = 1;
+        //no break here
     case SDLK_QUOTE:
         keysym->scancode = 40;
         break;
     case SDLK_PB_TILDE:
         shifted = 1;
+        //no break here
     case SDLK_BACKQUOTE:
         keysym->scancode = 41;
         break;
@@ -330,16 +344,19 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
         break;
     case SDLK_LESS:
         shifted = 1;
+        //no break here
     case SDLK_COMMA:
         keysym->scancode = 51;
         break;
     case SDLK_GREATER:
         shifted = 1;
+        //no break here
     case SDLK_PERIOD:
         keysym->scancode = 52;
         break;
     case SDLK_QUESTION:
         shifted = 1;
+        //no break here
     case SDLK_SLASH:
         keysym->scancode = 53;
         break;
@@ -766,6 +783,8 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
         break;
     case NAVIGATOR_WINDOW_UNLOCK:
         break;
+#ifdef __PLAYBOOK__
+#else
     case NAVIGATOR_INVOKE_TARGET:
         break;
     case NAVIGATOR_INVOKE_QUERY_RESULT:
@@ -818,6 +837,7 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
         break;
     case NAVIGATOR_POOLED:
         break;
+#endif
     default:
         break;
     }

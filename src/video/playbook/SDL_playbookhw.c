@@ -9,6 +9,7 @@
 
 #include "SDL_playbookhw_c.h"
 #include <errno.h>
+#include <string.h>
 
 int PLAYBOOK_AllocHWSurface(SDL_VideoDevice *device, SDL_Surface *surface)
 {
@@ -89,7 +90,7 @@ int PLAYBOOK_FlipHWSurface(SDL_VideoDevice *device, SDL_Surface *surface)
     // FIXME: device doesn't work properly yet. It flashes black, I think the new render buffers are wrong.
     static int fullRect[] = {0, 0, 1024, 600};
     //screen_flush_blits(device->hidden->screenContext, 0);
-    int result = screen_post_window(device->hidden->screenWindow, surface->hwdata->front, 1, fullRect, 0);
+    screen_post_window(device->hidden->screenWindow, surface->hwdata->front, 1, fullRect, 0);
 
     screen_buffer_t windowBuffer[2];
     int rc = screen_get_window_property_pv(device->hidden->screenWindow,
