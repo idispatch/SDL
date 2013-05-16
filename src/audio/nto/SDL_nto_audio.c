@@ -126,8 +126,11 @@ static void NTO_InitAudioParams(snd_pcm_channel_params_t* cpars)
 
     cpars->format.format = SND_PCM_SFMT_S16_LE;
     cpars->format.interleave = 1;
-    cpars->format.rate = 22050;
-    cpars->format.voices = 1;
+    cpars->format.rate = DEFAULT_CPARAMS_RATE;
+    cpars->format.voices = DEFAULT_CPARAMS_VOICES;
+    cpars->buf.block.frag_size = DEFAULT_CPARAMS_FRAG_SIZE;
+    cpars->buf.block.frags_min = DEFAULT_CPARAMS_FRAGS_MIN;
+    cpars->buf.block.frags_max = DEFAULT_CPARAMS_FRAGS_MAX;
 
     cpars->buf.block.frag_size = 4096;
     cpars->buf.block.frags_min = 1;

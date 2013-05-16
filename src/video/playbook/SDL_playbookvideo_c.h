@@ -15,6 +15,7 @@
 #include <screen/screen.h>
 
 /* Initialization/Query functions */
+extern int PLAYBOOK_GetWMInfo(SDL_VideoDevice *this, SDL_SysWMinfo *info);
 extern int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat);
 extern SDL_Rect **PLAYBOOK_ListModes(SDL_VideoDevice *this, SDL_PixelFormat *format, Uint32 flags);
 extern screen_window_t PLAYBOOK_CreateWindow();
@@ -23,6 +24,7 @@ extern int PLAYBOOK_SetColors(SDL_VideoDevice *this, int firstcolor, int ncolors
 extern void PLAYBOOK_VideoQuit(SDL_VideoDevice *this);
 
 /* etc. */
+extern int PLAYBOOK_SetupStretch(SDL_VideoDevice *this, screen_window_t screenWindow, int width, int height);
 extern void PLAYBOOK_UpdateRects(SDL_VideoDevice *this, int numrects, SDL_Rect *rects);
 
 #endif /* SDL_PLAYBOOKVIDEO_C_H_ */

@@ -125,6 +125,9 @@ extern DECLSPEC void SDLCALL SDL_SetModState(SDLMod modstate);
  */
 extern DECLSPEC char * SDLCALL SDL_GetKeyName(SDLKey key);
 
+#ifdef __QNXNTO__
+extern DECLSPEC void SDL_ShowKeyboard(int show);
+#endif
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus

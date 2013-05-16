@@ -316,6 +316,7 @@ static void AA_UnlockHWSurface(_THIS, SDL_Surface *surface)
 	return;
 }
 
+#if 0
 /* FIXME: How is this done with AAlib? */
 static int AA_FlipHWSurface(_THIS, SDL_Surface *surface)
 {
@@ -324,6 +325,7 @@ static int AA_FlipHWSurface(_THIS, SDL_Surface *surface)
 	SDL_mutexV(AA_mutex);
 	return(0);
 }
+#endif
 
 static void AA_DirectUpdate(_THIS, int numrects, SDL_Rect *rects)
 {

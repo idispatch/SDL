@@ -51,6 +51,16 @@ struct TouchEvent {
 static struct TouchEvent moveEvent;
 static int keyboardVisible = 0;
 
+void SDL_ShowKeyboard(int show)
+{
+    if(show) {
+        virtualkeyboard_show();
+        virtualkeyboard_change_options(VIRTUALKEYBOARD_LAYOUT_DEFAULT,
+                                       VIRTUALKEYBOARD_ENTER_DONE);
+    } else {
+        virtualkeyboard_hide();
+    }
+}
 
 static void handlePointerEvent(screen_event_t event, screen_window_t window)
 {
@@ -635,16 +645,15 @@ static void handleMtouchEvent(screen_event_t event, screen_window_t window, int 
 
 static void handleCustomEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
-#if 0
-	SDL_SysWMmsg wmmsg;
-	SDL_VERSION(&wmmsg.version);
-	wmmsg.event = event;
-	SDL_PrivateSysWMEvent(&wmmsg);
-#endif
+    SDL_SysWMmsg wmmsg;
+    SDL_VERSION(&wmmsg.version);
+    wmmsg.event = event;
+    SDL_PrivateSysWMEvent(&wmmsg);
 }
 
 static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
+    int rc, angle;
     switch (bps_event_get_code(event))
     {
     case NAVIGATOR_INVOKE:
@@ -690,6 +699,26 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
         navigator_orientation_check_response(event, getenv("AUTO_ORIENTATION") != NULL ? true : false);
         break;
     case NAVIGATOR_ORIENTATION:
+        angle = navigator_event_get_orientation_angle(event);
+
+        int angle_diff = abs(angle - this->hidden->angle);
+        int newsize[2] = {this->hidden->w, this->hidden->h};
+
+        if(angle_diff == 90 || angle_diff == 270){
+            /* flip */
+            newsize[0] = this->hidden->h;
+            newsize[1] = this->hidden->w;
+        }
+
+        rc  = screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_ROTATION, &angle);
+        rc |= screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_SIZE, newsize);
+        rc |= screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_SOURCE_SIZE, newsize);
+        if(rc){
+            SDL_SetError("Could not set mainWindow size or rotation: %s\n", strerror(errno));
+        }
+
+        SDL_PrivateResize(newsize[0], newsize[1]);
+        navigator_done_orientation(event);
         break;
     case NAVIGATOR_BACK:
         break;

@@ -38,6 +38,7 @@
 
 #include "SDL_video.h"
 #include "SDL_mouse.h"
+#include "SDL_syswm.h"
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
 #include "../../events/SDL_events_c.h"
@@ -47,6 +48,8 @@
 #include <bps/event.h>
 #include <bps/orientation.h>
 #include <bps/navigator.h>
+
+#include <EGL/egl.h>
 #include <bps/virtualkeyboard.h>
 
 #include "touchcontroloverlay.h"
@@ -66,7 +69,18 @@
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
-#include <EGL/egl.h>
+
+
+/*
+ * The environment variable STRETCH_MODE will make major differences in how the content is laid out on the screen.
+ *
+ * fill will stretch arbitrary resolutions onto the full screen, distorting if needed.
+ * aspect will stretch uniformly until one dimension is the screen dimension,
+ *    and letterbox with black in the other dimension.
+ * noscale will center a window of the correct resolution in the middle of the full screen.
+ *
+ * aspect is the default.
+ */
 
 #define PLAYBOOKVID_DRIVER_NAME "playbook"
 
@@ -115,7 +129,7 @@ static SDL_VideoDevice *PLAYBOOK_CreateDevice(int devindex)
     device->SetIcon = NULL;
     device->IconifyWindow = NULL;
     device->GrabInput = NULL;
-    device->GetWMInfo = NULL;
+    device->GetWMInfo = PLAYBOOK_GetWMInfo;
     device->InitOSKeymap = PLAYBOOK_InitOSKeymap;
     device->PumpEvents = PLAYBOOK_PumpEvents;
 
@@ -149,6 +163,20 @@ int PLAYBOOK_8Bit_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
     return 0;
 }
 
+int PLAYBOOK_GetWMInfo(SDL_VideoDevice *this, SDL_SysWMinfo *info)
+{
+   if ( info->version.major <= SDL_MAJOR_VERSION ) {
+       info->window = this->hidden->screenWindow;
+       info->context = this->hidden->screenContext;
+       info->mainWindow = this->hidden->mainWindow;
+       return(1);
+   } else {
+       SDL_SetError("Application not compiled with SDL %d.%d\n",
+                   SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
+       return(-1);
+   }
+}
+
 int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
 {
     int i;
@@ -176,7 +204,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != navigator_rotation_lock(false)) {
+    if (BPS_SUCCESS != navigator_rotation_lock(getenv("AUTO_ORIENTATION") != NULL ? false : true)) {
         SDL_SetError("Cannot set rotation lock: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
@@ -247,9 +275,53 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    rc = screen_get_display_property_iv(displays[0], SCREEN_PROPERTY_NATIVE_RESOLUTION, screenResolution);
+    if (getenv("WIDTH") != NULL && getenv("HEIGHT") != NULL) {
+         screenResolution[0] = atoi(getenv("WIDTH"));
+         screenResolution[1] = atoi(getenv("HEIGHT"));
+    } else {
+        rc = screen_get_display_property_iv(displays[0], SCREEN_PROPERTY_NATIVE_RESOLUTION, screenResolution);
+        if (rc) {
+            SDL_SetError("Cannot get native resolution: %s", strerror(errno));
+            SDL_free(displays);
+            screen_stop_events(this->hidden->screenContext);
+            screen_destroy_event(this->hidden->screenEvent);
+            screen_destroy_context(this->hidden->screenContext);
+            bps_shutdown();
+            return -1;
+        }
+    }
+
+    // FIXME: Bad hack for PlayBook to avoid rotation issues.
+    if (screenResolution[0] == 600 && screenResolution[1] == 1024) {
+        int angle = 0;
+        char *orientation = getenv("ORIENTATION");
+        if (orientation) {
+             fprintf(stderr, "Received orientation: %s\n", orientation);
+             angle = atoi(orientation);
+             if (angle == 0) {
+                 screenResolution[0] = 1024;
+                 screenResolution[1] = 600;
+             }
+        }
+    }
+
+    rc = screen_create_window(&this->hidden->mainWindow, this->hidden->screenContext);
     if (rc) {
-        SDL_SetError("Cannot get native resolution: %s", strerror(errno));
+        SDL_SetError("Cannot create main application window: %s", strerror(errno));
+            SDL_free(displays);
+        screen_stop_events(this->hidden->screenContext);
+        screen_destroy_event(this->hidden->screenEvent);
+        screen_destroy_context(this->hidden->screenContext);
+        bps_shutdown();
+        return -1;
+    }
+
+    char groupName[256];
+    snprintf(groupName, 256, "SDL-window-%d", getpid());
+    rc = screen_create_window_group(this->hidden->mainWindow, groupName);
+    if (rc) {
+        SDL_SetError("Cannot create main window group: %s", strerror(errno));
+        screen_destroy_window(this->hidden->mainWindow);
         SDL_free(displays);
         screen_stop_events(this->hidden->screenContext);
         screen_destroy_event(this->hidden->screenEvent);
@@ -278,21 +350,21 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
     this->hidden->SDL_modelist[i]->w = screenResolution[0];
     this->hidden->SDL_modelist[i++]->h = screenResolution[1];
 
-    /* 1: BlackBerry PlayBook */
-    this->hidden->SDL_modelist[i]->w = 1024;
-    this->hidden->SDL_modelist[i++]->h = 600;
-
-	/* 2: BlackBerry Z10 */
+	/* 1: BlackBerry Z10 */
     this->hidden->SDL_modelist[i]->w = 1280;
     this->hidden->SDL_modelist[i++]->h = 768;
 
-    /* 3: BlackBerry Q10, Q5 */
-	this->hidden->SDL_modelist[i]->w = 720;
-	this->hidden->SDL_modelist[i++]->h = 720;
+    /* 2: BlackBerry PlayBook */
+    this->hidden->SDL_modelist[i]->w = 1024;
+    this->hidden->SDL_modelist[i++]->h = 600;
 
-    /* 4: SVGA */
+    /* 3: SVGA */
     this->hidden->SDL_modelist[i]->w = 800;
     this->hidden->SDL_modelist[i++]->h = 600;
+
+    /* 4: BlackBerry Q10, Q5 */
+    this->hidden->SDL_modelist[i]->w = 720;
+    this->hidden->SDL_modelist[i++]->h = 720;
 
     /* 5: VGA */
     this->hidden->SDL_modelist[i]->w = 640;
