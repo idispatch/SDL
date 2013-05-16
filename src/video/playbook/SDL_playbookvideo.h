@@ -34,12 +34,13 @@
 /* Private display data */
 
 struct SDL_PrivateVideoData {
-    int w, h;
+    int w, h, angle;
     void *buffer;
     tco_context_t tco_context;
     screen_context_t screenContext;
     screen_event_t screenEvent;
     screen_window_t screenWindow;
+    screen_window_t mainWindow;
     screen_buffer_t frontBuffer;
     SDL_Surface *surface;
     void* pixels;
@@ -50,18 +51,18 @@ struct SDL_PrivateVideoData {
 
     // For 8bit video driver and OpenGL windows
     struct {
-        void *eglDisplay;
-        void *eglContext;
-        void *eglSurface;
+       void *eglDisplay;
+       void *eglContext;
+       void *eglSurface;
     } eglInfo;
 
     struct {
-        unsigned int shader;
-        int positionAttrib;
-        int texcoordAttrib;
-        unsigned int palette;
-        unsigned int screen[2];
-        int writableScreen;
+       unsigned int shader;
+       int positionAttrib;
+       int texcoordAttrib;
+       unsigned int palette;
+       unsigned int screen[2];
+       int writableScreen;
     } glInfo;
 };
 
