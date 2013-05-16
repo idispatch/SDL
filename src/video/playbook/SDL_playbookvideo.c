@@ -272,28 +272,46 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
     }
 
     /* Modes sorted largest to smallest */
-    this->hidden->SDL_modelist[0]->w = screenResolution[0];
-    this->hidden->SDL_modelist[0]->h = screenResolution[1];
+    i = 0;
 
-    this->hidden->SDL_modelist[1]->w = 800;
-    this->hidden->SDL_modelist[1]->h = 600;
+    /* 0: Default device screen size */
+    this->hidden->SDL_modelist[i]->w = screenResolution[0];
+    this->hidden->SDL_modelist[i++]->h = screenResolution[1];
 
-    this->hidden->SDL_modelist[2]->w = 800;
-    this->hidden->SDL_modelist[2]->h = 576;
+    /* 1: BlackBerry PlayBook */
+    this->hidden->SDL_modelist[i]->w = 1024;
+    this->hidden->SDL_modelist[i++]->h = 600;
 
-    this->hidden->SDL_modelist[3]->w = 640;
-    this->hidden->SDL_modelist[3]->h = 480;
+	/* 2: BlackBerry Z10 */
+    this->hidden->SDL_modelist[i]->w = 1280;
+    this->hidden->SDL_modelist[i++]->h = 768;
 
-    this->hidden->SDL_modelist[4]->w = 320;
-    this->hidden->SDL_modelist[4]->h = 400;
+    /* 3: BlackBerry Q10, Q5 */
+	this->hidden->SDL_modelist[i]->w = 720;
+	this->hidden->SDL_modelist[i++]->h = 720;
 
-    this->hidden->SDL_modelist[5]->w = 320;
-    this->hidden->SDL_modelist[5]->h = 240;
+    /* 4: SVGA */
+    this->hidden->SDL_modelist[i]->w = 800;
+    this->hidden->SDL_modelist[i++]->h = 600;
 
-    this->hidden->SDL_modelist[6]->w = 320;
-    this->hidden->SDL_modelist[6]->h = 200;
+    /* 5: VGA */
+    this->hidden->SDL_modelist[i]->w = 640;
+    this->hidden->SDL_modelist[i++]->h = 480;
 
-    this->hidden->SDL_modelist[7] = NULL;
+    /* 6: X-Mode VGA */
+    this->hidden->SDL_modelist[i]->w = 320;
+    this->hidden->SDL_modelist[i++]->h = 400;
+
+    /* 7: QVGA */
+    this->hidden->SDL_modelist[i]->w = 320;
+    this->hidden->SDL_modelist[i++]->h = 240;
+
+    /* 8: CGA */
+    this->hidden->SDL_modelist[i]->w = 320;
+    this->hidden->SDL_modelist[i++]->h = 200;
+
+    /* 9: Sentinel (no screen) */
+    this->hidden->SDL_modelist[i] = NULL;
 
     /* Determine the screen depth (use default 32-bit depth) */
     vformat->BitsPerPixel = 32;
@@ -399,7 +417,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     int format = 0;
 
     int sizeOfWindow[2];
-#ifdef __STRETCHED__
+#ifdef __STRETCHED_VIDEO_SCREEN__
     rc = screen_get_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
     if (rc) {
         SDL_SetError("Cannot get resolution: %s", strerror(errno));
@@ -441,7 +459,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
 #endif
 
 
-#ifdef __STRETCHED__
+#ifdef __STRETCHED_VIDEO_SCREEN__
     int sizeOfBuffer[2] = {width, height};
 #else
     int sizeOfBuffer[2] = {sizeOfWindow[0], sizeOfWindow[1]};
@@ -540,7 +558,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     current->flags &= ~SDL_RESIZABLE; /* no resize for Direct Context */
     current->flags |= SDL_FULLSCREEN;
     current->flags |= SDL_HWSURFACE;
-#ifdef __STRETCHED__
+#ifdef __STRETCHED_VIDEO_SCREEN__
     current->w = width;
     current->h = height;
 #else
@@ -570,8 +588,6 @@ void PLAYBOOK_UpdateRects(SDL_VideoDevice *this, int numrects, SDL_Rect *rects)
 
 int PLAYBOOK_SetColors(SDL_VideoDevice *this, int firstcolor, int ncolors, SDL_Color *colors)
 {
-    /* do nothing of note. */
-    // FIXME: Do we need to handle palette?
     return(1);
 }
 

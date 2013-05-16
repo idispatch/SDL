@@ -33,6 +33,10 @@
 #include <errno.h> // ::errno
 #include <time.h> // struct tm, clock_gettime
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+
 static void egl_perror(const char *msg)
 {
     static const char *errmsg[] = {
@@ -78,6 +82,12 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
     int sizeOfBuffer[2] = {width, height};
     int usage = SCREEN_USAGE_OPENGL_ES1;
     EGLint eglSurfaceAttributes[3] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE };
+
+    if (this->gl_config.major_version == 2) {
+        contextAttributes[1] = 2;
+        attributes[11] = EGL_OPENGL_ES2_BIT;
+        usage = SCREEN_USAGE_OPENGL_ES2;
+    }
 
     if (this->hidden->screenWindow) {
         fprintf(stderr, "OpenGL window already created... this WILL fail\n"); // FIXME

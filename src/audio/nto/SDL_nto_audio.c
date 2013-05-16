@@ -41,6 +41,16 @@
 /* The tag name used by NTO audio */
 #define DRIVER_NAME "qsa-nto"
 
+/* default channel communication parameters */
+#define DEFAULT_CPARAMS_RATE 22050
+#define DEFAULT_CPARAMS_VOICES 1
+#define DEFAULT_CPARAMS_FRAG_SIZE 2048
+#define DEFAULT_CPARAMS_FRAGS_MIN 1
+#define DEFAULT_CPARAMS_FRAGS_MAX 4
+
+/* Open the audio device for playback, and don't block if busy */
+#define OPEN_FLAGS SND_PCM_OPEN_PLAYBACK
+
 #define QSA_NO_WORKAROUNDS  0x00000000
 #define QSA_MMAP_WORKAROUND 0x00000001
 

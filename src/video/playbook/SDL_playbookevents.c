@@ -19,6 +19,7 @@
     Sam Lantinga
     slouken@libsdl.org
 */
+#include "SDL_syswm.h"
 #include "SDL_config.h"
 #include "SDL.h"
 #include "../../events/SDL_sysevents.h"
@@ -35,6 +36,8 @@
 #include <bps/navigator.h>
 #include <bps/virtualkeyboard.h>
 #include "touchcontroloverlay.h"
+
+#include <errno.h>
 
 #define SDLK_PB_TILDE 160 // Conflicts with SDLK_WORLD_0.
 static SDL_keysym Playbook_Keycodes[256];
@@ -115,8 +118,6 @@ static int TranslateBluetoothKeyboard(int sym, int mods, int flags, int scan, in
         keysym->mod |= KMOD_CAPS;
     if (mods & (0x20000)) // FIXME: guessing
         keysym->mod |= KMOD_NUM;
-    //if (mods & (0x40000))
-        //keysym.mod |= SCROLL LOCK; // SDL has no scroll lock
 
     if (sym & 0xf000) {
         sym = sym & 0xff;
@@ -142,8 +143,8 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
     if (mods & (0x1))
         shifted = 1;
 
-    // FIXME: These scancodes are really just implemented this way for dosbox.
-    // See keyboard.cpp inside dosbox (KEYBOARD_AddKey) for a reference.
+    // FIXME: These scan codes are really just implemented this way for DOSbox.
+    // See keyboard.cpp inside DOSbox (KEYBOARD_AddKey) for a reference.
     switch (keysym->sym)
     {
     case SDLK_EXCLAIM:
@@ -632,6 +633,16 @@ static void handleMtouchEvent(screen_event_t event, screen_window_t window, int 
     }
 }
 
+static void handleCustomEvent(SDL_VideoDevice *this, bps_event_t *event)
+{
+#if 0
+	SDL_SysWMmsg wmmsg;
+	SDL_VERSION(&wmmsg.version);
+	wmmsg.event = event;
+	SDL_PrivateSysWMEvent(&wmmsg);
+#endif
+}
+
 static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
     switch (bps_event_get_code(event))
@@ -676,6 +687,7 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
     case NAVIGATOR_LOW_MEMORY:
         break;
     case NAVIGATOR_ORIENTATION_CHECK:
+        navigator_orientation_check_response(event, getenv("AUTO_ORIENTATION") != NULL ? true : false);
         break;
     case NAVIGATOR_ORIENTATION:
         break;
@@ -839,6 +851,9 @@ PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
                         break;
                     }
                 }
+
+                // post SDL_SYSWMEVENT event containing the bps event pointer
+                handleCustomEvent(this, event);
             }
             continue;
         }
@@ -912,4 +927,3 @@ void PLAYBOOK_InitOSKeymap(SDL_VideoDevice *this)
         Playbook_specialsyms[0x6b] = SDLK_BREAK;
     }
 }
-
