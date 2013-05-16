@@ -33,33 +33,20 @@
 #include <bps/event.h>
 #include <bps/orientation.h>
 #include <bps/navigator.h>
+#include <bps/virtualkeyboard.h>
 #include "touchcontroloverlay.h"
 
 #define SDLK_PB_TILDE 160 // Conflicts with SDLK_WORLD_0.
 static SDL_keysym Playbook_Keycodes[256];
 static SDLKey *Playbook_specialsyms;
 
-//#define TOUCHPAD_SIMULATE 1 // Still experimental
-#ifdef TOUCHPAD_SIMULATE
-struct TouchState {
-    int oldPos[2];
-    int pending[2];
-    int mask;
-    int moveId;
-    int leftDown;
-    int leftId;
-    int rightDown;
-    int rightId;
-};
-
-static struct TouchState state = { {0, 0}, {0, 0}, 0, -1, 0, -1, 0, -1};
-#endif
 struct TouchEvent {
     int pending;
     int touching;
     int pos[2];
 };
 static struct TouchEvent moveEvent;
+static int keyboardVisible = 0;
 
 
 static void handlePointerEvent(screen_event_t event, screen_window_t window)
@@ -561,7 +548,8 @@ static int TranslateVKB(int sym, int mods, int flags, int scan, int cap, SDL_key
 
 static void handleKeyboardEvent(screen_event_t event)
 {
-    static const int KEYBOARD_TYPE_MASK = 0x20;
+    static const int BLUETOOTH_KEYBOARD_MASK = 0x20;
+    static const int Q10_KEYBOARD_MASK = 0xe0;
     int sym = 0;
     screen_get_event_property_iv(event, SCREEN_PROPERTY_KEY_SYM, &sym);
     int modifiers = 0;
@@ -575,7 +563,21 @@ static void handleKeyboardEvent(screen_event_t event)
 
     int shifted = 0;
     SDL_keysym keysym;
-    if (flags & KEYBOARD_TYPE_MASK) {
+    if (flags & Q10_KEYBOARD_MASK) {
+      if (sym == 0xf0d3 ) {
+        // Special case for the symbol key.
+        if (!(flags & 0x1)) {
+          if (!keyboardVisible) {
+            virtualkeyboard_change_options(VIRTUALKEYBOARD_LAYOUT_SYMBOL, VIRTUALKEYBOARD_ENTER_DEFAULT);
+            virtualkeyboard_show();
+          } else {
+            virtualkeyboard_hide();
+          }
+        }
+        return;
+      }
+      shifted = TranslateVKB(sym, modifiers, flags, scan, cap, &keysym);
+    } else if (flags & BLUETOOTH_KEYBOARD_MASK) {
         if (!TranslateBluetoothKeyboard(sym, modifiers, flags, scan, cap, &keysym))
         {
             return; // No translation
@@ -603,93 +605,6 @@ static void handleKeyboardEvent(screen_event_t event)
 
 static void handleMtouchEvent(screen_event_t event, screen_window_t window, int type)
 {
-#ifdef TOUCHPAD_SIMULATE
-
-    unsigned buttonWidth = 200;
-    unsigned buttonHeight = 300;
-
-    int contactId;
-    int pos[2];
-    int screenPos[2];
-    screen_get_event_property_iv(event, SCREEN_PROPERTY_TOUCH_ID, (int*)&contactId);
-    screen_get_event_property_iv(event, SCREEN_PROPERTY_SOURCE_POSITION, pos);
-    screen_get_event_property_iv(event, SCREEN_PROPERTY_POSITION, screenPos);
-
-    int mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
-
-    if (state.leftId == contactId) {
-        if (type == SCREEN_EVENT_MTOUCH_RELEASE) {
-            state.leftId = -1;
-            SDL_PrivateMouseButton(SDL_RELEASED, SDL_BUTTON_LEFT, mouseX, mouseY);
-        }
-        return;
-    }
-    if (state.rightId == contactId) {
-        if (type == SCREEN_EVENT_MTOUCH_RELEASE) {
-            state.rightId = -1;
-            SDL_PrivateMouseButton(SDL_RELEASED, SDL_BUTTON_RIGHT, mouseX, mouseY);
-        }
-        return;
-    }
-
-    if (screenPos[0] < buttonWidth && contactId != state.moveId) {
-        // Special handling for buttons
-
-        if (screenPos[1] < buttonHeight) {
-            // Left button
-            if (type == SCREEN_EVENT_MTOUCH_TOUCH) {
-                if (state.leftId == -1 && contactId != state.rightId) {
-                    SDL_PrivateMouseButton(SDL_PRESSED, SDL_BUTTON_LEFT, mouseX, mouseY);
-                    state.leftId = contactId;
-                }
-            }
-        } else {
-            // Right button
-            if (type == SCREEN_EVENT_MTOUCH_TOUCH) {
-                if (state.rightId == -1 && contactId != state.leftId) {
-                    SDL_PrivateMouseButton(SDL_PRESSED, SDL_BUTTON_RIGHT, mouseX, mouseY);
-                    state.rightId = contactId;
-                }
-            }
-        }
-    } else {
-        // Can only generate motion events
-        int doMove = 0;
-        switch (type) {
-        case SCREEN_EVENT_MTOUCH_TOUCH:
-            if (state.moveId == -1 || state.moveId == contactId) {
-                state.moveId = contactId;
-            }
-            break;
-        case SCREEN_EVENT_MTOUCH_RELEASE:
-            if (state.moveId == contactId) {
-                doMove = 1;
-                state.moveId = -1;
-            }
-            break;
-        case SCREEN_EVENT_MTOUCH_MOVE:
-            if (state.moveId == contactId) {
-                doMove = 1;
-            }
-            break;
-        }
-
-        if (doMove) {
-            int mask = 0;
-            if (state.leftDown)
-                mask |= SDL_BUTTON_LEFT;
-            if (state.rightDown)
-                mask |= SDL_BUTTON_RIGHT;
-            state.mask = mask;
-            state.pending[0] += pos[0] - state.oldPos[0];
-            state.pending[1] += pos[1] - state.oldPos[1];
-            //SDL_PrivateMouseMotion(mask, 1, pos[0] - state.oldPos[0], pos[1] - state.oldPos[1]);
-        }
-        state.oldPos[0] = pos[0];
-        state.oldPos[1] = pos[1];
-    }
-#else
     int contactId;
     int pos[2];
     int screenPos[2];
@@ -706,20 +621,15 @@ static void handleMtouchEvent(screen_event_t event, screen_window_t window, int 
     screen_get_event_property_llv(event, SCREEN_PROPERTY_TIMESTAMP, (long long*)&timestamp);
     screen_get_event_property_iv(event, SCREEN_PROPERTY_SEQUENCE_ID, (int*)&sequenceId);
 
-    if (pos[1] < 0) {
-        fprintf(stderr, "Detected swipe event: %d,%d\n", pos[0], pos[1]);
-        return;
-    }
     if (type == SCREEN_EVENT_MTOUCH_TOUCH) {
+        SDL_PrivateMultiMouseMotion(contactId, 0, 0, pos[0], pos[1]);
         SDL_PrivateMultiMouseButton(contactId, SDL_PRESSED, SDL_BUTTON_LEFT, pos[0], pos[1]);
     } else if (type == SCREEN_EVENT_MTOUCH_RELEASE) {
+        SDL_PrivateMultiMouseMotion(contactId, SDL_BUTTON_LEFT, 0, pos[0], pos[1]);
         SDL_PrivateMultiMouseButton(contactId, SDL_RELEASED, SDL_BUTTON_LEFT, pos[0], pos[1]);
     } else if (type == SCREEN_EVENT_MTOUCH_MOVE) {
         SDL_PrivateMultiMouseMotion(contactId, SDL_BUTTON_LEFT, 0, pos[0], pos[1]);
     }
-
-    // TODO: Possibly need more complicated touch handling
-#endif
 }
 
 static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
@@ -910,23 +820,29 @@ PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
             {
                 /* TCO did not handle the event */
                 int domain = bps_event_get_domain(event);
-                if (domain == navigator_get_domain()) {
+                if (domain == navigator_get_domain())
+                {
                     handleNavigatorEvent(this, event);
                 }
-                else if (domain == screen_get_domain()) {
+                else if (domain == screen_get_domain())
+                {
                     handleScreenEvent(this, event);
+                }
+                else if (domain == virtualkeyboard_get_domain())
+                {
+                    switch (bps_event_get_code(event)) {
+                    case VIRTUALKEYBOARD_EVENT_VISIBLE:
+                        keyboardVisible = 1;
+                        break;
+                    case VIRTUALKEYBOARD_EVENT_HIDDEN:
+                        keyboardVisible = 0;
+                        break;
+                    }
                 }
             }
             continue;
         }
     }
-#ifdef TOUCHPAD_SIMULATE
-    if (state.pending[0] || state.pending[1]) {
-        SDL_PrivateMouseMotion(state.mask, 1, state.pending[0], state.pending[1]);
-        state.pending[0] = 0;
-        state.pending[1] = 0;
-    }
-#endif
 }
 
 void PLAYBOOK_InitOSKeymap(SDL_VideoDevice *this)
@@ -995,29 +911,5 @@ void PLAYBOOK_InitOSKeymap(SDL_VideoDevice *this)
         Playbook_specialsyms[0x61] = SDLK_SYSREQ;
         Playbook_specialsyms[0x6b] = SDLK_BREAK;
     }
-
-#if 0 // Possible further keycodes that are available on the VKB
-    Playbook_Keycodes[123].sym = SDLK_SPACE; /* { */
-    Playbook_Keycodes[124].sym = SDLK_SPACE; /* | */
-    Playbook_Keycodes[125].sym = SDLK_SPACE; /* } */
-    Playbook_Keycodes[126].sym = SDLK_SPACE; /* ~ */
-    Playbook_Keycodes[161].sym = SDLK_SPACE; /* upside down ! */
-    Playbook_Keycodes[163].sym = SDLK_SPACE; /* British pound */
-    Playbook_Keycodes[164].sym = SDLK_SPACE; /* odd circle/x */
-    Playbook_Keycodes[165].sym = SDLK_SPACE; /* Japanese yen */
-    Playbook_Keycodes[171].sym = SDLK_SPACE; /* small << */
-    Playbook_Keycodes[177].sym = SDLK_SPACE; /* +/- */
-    Playbook_Keycodes[183].sym = SDLK_SPACE; /* dot product */
-    Playbook_Keycodes[187].sym = SDLK_SPACE; /* small >> */
-    Playbook_Keycodes[191].sym = SDLK_SPACE; /* upside down ? */
-    Playbook_Keycodes[247].sym = SDLK_SPACE; /* division */
-    /*
-     * Playbook_Keycodes[8220] = smart double quote (top)
-     * Playbook_Keycodes[8221] = smart double quote (bottom)
-     * Playbook_Keycodes[8364] = euro
-     * Playbook_Keycodes[61448] = backspace
-     * Playbook_Keycodes[61453] = return
-     */
-#endif
 }
 

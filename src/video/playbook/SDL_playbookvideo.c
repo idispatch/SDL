@@ -47,6 +47,7 @@
 #include <bps/event.h>
 #include <bps/orientation.h>
 #include <bps/navigator.h>
+#include <bps/virtualkeyboard.h>
 
 #include "touchcontroloverlay.h"
 #include <unistd.h>
@@ -201,6 +202,14 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
 
     if (BPS_SUCCESS != screen_request_events(this->hidden->screenContext)) {
         SDL_SetError("Cannot get screen events: %s", strerror(errno));
+        bps_shutdown();
+        screen_destroy_event(this->hidden->screenEvent);
+        screen_destroy_context(this->hidden->screenContext);
+        return -1;
+    }
+
+    if (BPS_SUCCESS != virtualkeyboard_request_events(0)) {
+        SDL_SetError("Cannot get VKB events: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
         screen_destroy_context(this->hidden->screenContext);
