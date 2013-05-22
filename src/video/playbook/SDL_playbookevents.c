@@ -33,6 +33,7 @@
 #include <bps/event.h>
 #include <bps/orientation.h>
 #include <bps/navigator.h>
+#include <bps/virtualkeyboard.h>
 #include "touchcontroloverlay.h"
 
 #define SDLK_PB_TILDE 160 // Conflicts with SDLK_WORLD_0.
@@ -61,6 +62,16 @@ struct TouchEvent {
 };
 static struct TouchEvent moveEvent;
 
+void SDL_ShowKeyboard(int show)
+{
+    if(show) {
+        virtualkeyboard_show();
+        virtualkeyboard_change_options(VIRTUALKEYBOARD_LAYOUT_DEFAULT,
+                                       VIRTUALKEYBOARD_ENTER_DONE);
+    } else {
+        virtualkeyboard_hide();
+    }
+}
 
 static void handlePointerEvent(screen_event_t event, screen_window_t window)
 {
