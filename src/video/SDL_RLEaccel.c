@@ -21,6 +21,10 @@
 */
 #include "SDL_config.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 /*
  * RLE encoding for software colorkey and alpha-channel acceleration
  *

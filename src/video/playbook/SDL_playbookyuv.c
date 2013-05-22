@@ -10,6 +10,11 @@
 #include "SDL_playbookyuv_c.h"
 #include "../SDL_yuvfuncs.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 static struct private_yuvhwfuncs PLAYBOOK_yuvfuncs =
 {
     PLAYBOOK_LockYUVOverlay,

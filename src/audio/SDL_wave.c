@@ -26,6 +26,9 @@
 #include "SDL_audio.h"
 #include "SDL_wave.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 
 static int ReadChunk(SDL_RWops *src, Chunk *chunk);
 

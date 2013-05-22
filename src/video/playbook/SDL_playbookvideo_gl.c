@@ -33,6 +33,10 @@
 #include <errno.h> // ::errno
 #include <time.h> // struct tm, clock_gettime
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+
 static void egl_perror(const char *msg)
 {
     static const char *errmsg[] = {

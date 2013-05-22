@@ -30,6 +30,10 @@
 #include "SDL_video.h"
 #include "SDL_blit.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 /* This isn't ready for general consumption yet - it should be folded
    into the general blitting mechanism.
 */
