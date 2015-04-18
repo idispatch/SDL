@@ -45,7 +45,7 @@
 #define DEFAULT_CPARAMS_RATE 22050
 #define DEFAULT_CPARAMS_VOICES 1
 #define DEFAULT_CPARAMS_FRAG_SIZE 2048
-#define DEFAULT_CPARAMS_FRAGS_MIN 1
+#define DEFAULT_CPARAMS_FRAGS_MIN 2
 #define DEFAULT_CPARAMS_FRAGS_MAX 4
 
 /* Open the audio device for playback, and don't block if busy */

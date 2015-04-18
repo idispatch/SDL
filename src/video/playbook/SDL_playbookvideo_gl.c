@@ -78,7 +78,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
     EGLint configCount;
     screen_window_t screenWindow;
     int format = SCREEN_FORMAT_RGBX8888;
-    int sizeOfWindow[2] = {this->info.current_w, this->info.current_h};
+    int sizeOfWindow[2] = {1024, 600};
     int sizeOfBuffer[2] = {width, height};
     int usage = SCREEN_USAGE_OPENGL_ES1;
     EGLint eglSurfaceAttributes[3] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE };
@@ -89,38 +89,14 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
         usage = SCREEN_USAGE_OPENGL_ES2;
     }
 
-    if (getenv("WIDTH") != NULL && getenv("HEIGHT") != NULL) {
-        sizeOfWindow[0] = atoi(getenv("WIDTH"));
-        sizeOfWindow[1] = atoi(getenv("HEIGHT"));
-    } else {
-        rc = screen_get_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
-        if (rc) {
-            goto error1;
-        }
-
-        if (this->hidden->screenWindow) {
-            rc = eglMakeCurrent(this->hidden->eglInfo.eglDisplay, 0, 0, 0);
-            if (rc != EGL_TRUE) {
-                egl_perror("eglMakeNoneCurrent");
-                goto error1;
-            }
-
-            rc = eglDestroySurface(this->hidden->eglInfo.eglDisplay, this->hidden->eglInfo.eglSurface);
-            if (rc != EGL_TRUE) {
-                egl_perror("eglDestroySurface");
-                goto error1;
-            }
-
-            this->hidden->eglInfo.eglSurface = 0;
-       }
+    if (this->hidden->screenWindow) {
+        fprintf(stderr, "OpenGL window already created... this WILL fail\n"); // FIXME
     }
 
-    if (!this->hidden->eglInfo.eglDisplay) {
-        this->hidden->eglInfo.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        if (this->hidden->eglInfo.eglDisplay == EGL_NO_DISPLAY) {
-            egl_perror("eglGetDisplay");
-            goto error1;
-        }
+    this->hidden->eglInfo.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (this->hidden->eglInfo.eglDisplay == EGL_NO_DISPLAY) {
+        egl_perror("eglGetDisplay");
+        goto error1;
     }
 
     rc = eglInitialize(this->hidden->eglInfo.eglDisplay, NULL, NULL);
@@ -137,19 +113,18 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
 
     rc = eglChooseConfig(this->hidden->eglInfo.eglDisplay, attributes, configs, 1, &configCount);
     if (rc != EGL_TRUE)    {
-        egl_perror("eglChooseConfig");
-        goto error2;
+        egl_perror("eglBindAPI");
+        eglTerminate(this->hidden->eglInfo.eglDisplay);
+        return NULL;
     } else if (configCount <= 0)    {
         fprintf(stderr, "No matching configurations found.");
         goto error2;
     }
 
-    if (!this->hidden->eglInfo.eglContext) {
-        this->hidden->eglInfo.eglContext = eglCreateContext(this->hidden->eglInfo.eglDisplay, configs[0], EGL_NO_CONTEXT, contextAttributes);
-        if (this->hidden->eglInfo.eglContext == EGL_NO_CONTEXT)    {
-            egl_perror("eglCreateContext");
-            goto error2;
-        }
+    this->hidden->eglInfo.eglContext = eglCreateContext(this->hidden->eglInfo.eglDisplay, configs[0], EGL_NO_CONTEXT, contextAttributes);
+    if (this->hidden->eglInfo.eglContext == EGL_NO_CONTEXT)    {
+        egl_perror("eglCreateContext");
+        goto error2;
     }
 
     screenWindow = PLAYBOOK_CreateWindow(this, current, width, height, bpp);
@@ -157,11 +132,19 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
         goto error3;
     }
 
-    rc = PLAYBOOK_SetupStretch(this, screenWindow, width, height);
+    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
     if (rc) {
-        SDL_SetError("Failed to set window size: %s", strerror(errno));
-        goto error4;
+        SDL_SetError("Cannot resize window: %s", strerror(errno));
+        screen_destroy_window(screenWindow);
+        return NULL;
     }
+
+//        rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_BUFFER_SIZE, sizeOfBuffer);
+//        if (rc) {
+//            SDL_SetError("Cannot resize window buffer: %s", strerror(errno));
+//            screen_destroy_window(screenWindow);
+//            return NULL;
+//        }
 
     rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_FORMAT, &format);
     if (rc) {

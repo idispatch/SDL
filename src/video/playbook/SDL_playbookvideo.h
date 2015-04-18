@@ -29,7 +29,7 @@
 #include "touchcontroloverlay.h"
 
 /* Real mode list SDL_modelist vector size is SDL_NUMMODES+1 */
-#define SDL_NUMMODES 8
+#define SDL_NUMMODES 16
 
 /* Private display data */
 
