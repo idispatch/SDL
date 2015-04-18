@@ -10,6 +10,10 @@
 #include "SDL_playbookhw_c.h"
 #include <errno.h>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+
 int PLAYBOOK_AllocHWSurface(SDL_VideoDevice *device, SDL_Surface *surface)
 {
     if (surface->hwdata != NULL) {

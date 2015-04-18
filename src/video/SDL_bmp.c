@@ -44,6 +44,9 @@
 #define BI_BITFIELDS	3
 #endif
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 
 SDL_Surface * SDL_LoadBMP_RW (SDL_RWops *src, int freesrc)
 {
@@ -188,6 +191,7 @@ SDL_Surface * SDL_LoadBMP_RW (SDL_RWops *src, int freesrc)
 				}
 				break;
 			}
+			/* no break */
 			/* Fall through -- read the RGB masks */
 
 		case BI_BITFIELDS:
