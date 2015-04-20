@@ -80,16 +80,15 @@ static void handlePointerEvent(screen_event_t event, screen_window_t window)
         fprintf(stderr, "Detected pointer swipe event: %d,%d\n", coords[0], coords[1]);
         return;
     }
-    if (wheel_delta != 0) {
+    if (wheel_delta != 0)
+    {
         int button;
         if ( wheel_delta > 0 )
             button = SDL_BUTTON_WHEELDOWN;
         else if ( wheel_delta < 0 )
             button = SDL_BUTTON_WHEELUP;
-        SDL_PrivateMouseButton(
-            SDL_PRESSED, button, 0, 0);
-        SDL_PrivateMouseButton(
-            SDL_RELEASED, button, 0, 0);
+        SDL_PrivateMouseButton(SDL_PRESSED, button, 0, 0);
+        SDL_PrivateMouseButton(SDL_RELEASED, button, 0, 0);
     }
 
     // FIXME: Pointer events have never been tested.
@@ -103,7 +102,10 @@ static void handlePointerEvent(screen_event_t event, screen_window_t window)
     }
     lastButtonState = buttonState;
 
-    SDL_PrivateMouseButton(buttonState ? SDL_PRESSED : SDL_RELEASED, SDL_BUTTON_LEFT, coords[0], coords[1]); // FIXME: window
+    SDL_PrivateMouseButton(buttonState ? SDL_PRESSED : SDL_RELEASED,
+                           SDL_BUTTON_LEFT,
+                           coords[0],
+                           coords[1]); // FIXME: window
     moveEvent.pending = 0;
 }
 
