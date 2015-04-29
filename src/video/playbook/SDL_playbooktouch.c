@@ -6,6 +6,8 @@
 #include "../SDL_pixels_c.h"
 #include "../../events/SDL_events_c.h"
 #include "SDL_playbookvideo.h"
+#include <stdio.h>
+#include <screen/screen.h>
 
 int handleKey(int sym, int mod, int scancode, uint16_t unicode, int event)
 {
@@ -212,11 +214,21 @@ int initialize_touch_controls(SDL_VideoDevice *this, screen_window_t screenWindo
         handleTouchScreen
     };
 
+    int sizeOfWindow[2];
+    int rc = screen_get_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
+    if(rc) {
+        return TCO_FAILURE;
+    }
+
+    char controlsFileName[128];
+    snprintf(controlsFileName,
+             sizeof(controlsFileName),
+             "app/native/controls-%dx%d.json", sizeOfWindow[0], sizeOfWindow[1]);
     if(tco_initialize(&this->hidden->tco_context,
                       this->hidden->screenContext,
                       callbacks) == TCO_SUCCESS) {
         if (tco_loadcontrols(this->hidden->tco_context,
-                             "app/native/controls.json",
+                             controlsFileName,
                              "data/controls.json") == TCO_SUCCESS) {
             tco_draw(this->hidden->tco_context, screenWindow);
             return TCO_SUCCESS;

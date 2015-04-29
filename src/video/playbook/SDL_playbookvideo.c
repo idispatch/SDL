@@ -279,7 +279,9 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
          screenResolution[0] = atoi(getenv("WIDTH"));
          screenResolution[1] = atoi(getenv("HEIGHT"));
     } else {
-        rc = screen_get_display_property_iv(displays[0], SCREEN_PROPERTY_NATIVE_RESOLUTION, screenResolution);
+        rc = screen_get_display_property_iv(displays[0],
+                                            SCREEN_PROPERTY_NATIVE_RESOLUTION,
+                                            screenResolution);
         if (rc) {
             SDL_SetError("Cannot get native resolution: %s", strerror(errno));
             SDL_free(displays);
@@ -291,7 +293,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         }
     }
 
-    // FIXME: Bad hack for PlayBook to avoid rotation issues.
+    // Hack for PlayBook to avoid rotation issues.
     if (screenResolution[0] == 600 && screenResolution[1] == 1024) {
         int angle = 0;
         char *orientation = getenv("ORIENTATION");
@@ -343,46 +345,27 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         this->hidden->SDL_modelist[i]->x = this->hidden->SDL_modelist[i]->y = 0;
     }
 
-    /* Modes sorted largest to smallest */
     i = 0;
 
-    /* 0: Default device screen size */
     this->hidden->SDL_modelist[i]->w = screenResolution[0];
     this->hidden->SDL_modelist[i++]->h = screenResolution[1];
-
-	/* 1: BlackBerry Z10 */
-    this->hidden->SDL_modelist[i]->w = 1280;
-    this->hidden->SDL_modelist[i++]->h = 768;
-
-    /* 2: BlackBerry PlayBook */
-    this->hidden->SDL_modelist[i]->w = 1024;
-    this->hidden->SDL_modelist[i++]->h = 600;
-
-    /* 3: SVGA */
-    this->hidden->SDL_modelist[i]->w = 800;
-    this->hidden->SDL_modelist[i++]->h = 600;
-
-    /* 4: BlackBerry Q10, Q5 */
+#if 0
     this->hidden->SDL_modelist[i]->w = 720;
     this->hidden->SDL_modelist[i++]->h = 720;
 
-    /* 5: VGA */
-    this->hidden->SDL_modelist[i]->w = 640;
-    this->hidden->SDL_modelist[i++]->h = 480;
+    this->hidden->SDL_modelist[i]->w = 1024;
+    this->hidden->SDL_modelist[i++]->h = 600;
 
-    /* 6: X-Mode VGA */
-    this->hidden->SDL_modelist[i]->w = 320;
-    this->hidden->SDL_modelist[i++]->h = 400;
+    this->hidden->SDL_modelist[i]->w = 1280;
+    this->hidden->SDL_modelist[i++]->h = 720;
 
-    /* 7: QVGA */
-    this->hidden->SDL_modelist[i]->w = 320;
-    this->hidden->SDL_modelist[i++]->h = 240;
+    this->hidden->SDL_modelist[i]->w = 1280;
+    this->hidden->SDL_modelist[i++]->h = 768;
 
-    /* 8: CGA */
-    this->hidden->SDL_modelist[i]->w = 320;
-    this->hidden->SDL_modelist[i++]->h = 200;
-
-    /* 9: Sentinel (no screen) */
+    this->hidden->SDL_modelist[i]->w = 1440;
+    this->hidden->SDL_modelist[i++]->h = 1440;
+#endif
+    /* Sentinel (no screen) */
     this->hidden->SDL_modelist[i] = NULL;
 
     /* Determine the screen depth (use default 32-bit depth) */
@@ -403,7 +386,6 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
     this->info.current_w = screenResolution[0];
     this->info.current_h = screenResolution[1];
 
-    /* We're done! */
     return 0;
 }
 
