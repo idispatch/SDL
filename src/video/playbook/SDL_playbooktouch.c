@@ -224,12 +224,16 @@ int initialize_touch_controls(SDL_VideoDevice *this, screen_window_t screenWindo
     snprintf(controlsFileName,
              sizeof(controlsFileName),
              "app/native/controls-%dx%d.json", sizeOfWindow[0], sizeOfWindow[1]);
+    char userControlsFileName[128];
+    snprintf(userControlsFileName,
+             sizeof(userControlsFileName),
+             "data/controls-%dx%d.json", sizeOfWindow[0], sizeOfWindow[1]);
     if(tco_initialize(&this->hidden->tco_context,
                       this->hidden->screenContext,
                       callbacks) == TCO_SUCCESS) {
         if (tco_loadcontrols(this->hidden->tco_context,
                              controlsFileName,
-                             "data/controls.json") == TCO_SUCCESS) {
+                             userControlsFileName) == TCO_SUCCESS) {
             tco_draw(this->hidden->tco_context, screenWindow);
             return TCO_SUCCESS;
         } else {
