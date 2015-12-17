@@ -655,7 +655,7 @@ static void handleCustomEvent(SDL_VideoDevice *this, bps_event_t *event)
 
 static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
 {
-    int rc, angle;
+    int angle;
     switch (bps_event_get_code(event))
     {
     case NAVIGATOR_INVOKE:
@@ -698,11 +698,11 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
     case NAVIGATOR_LOW_MEMORY:
         break;
     case NAVIGATOR_ORIENTATION_CHECK:
-        navigator_orientation_check_response(event, getenv("AUTO_ORIENTATION") != NULL ? true : false);
+        navigator_orientation_check_response(event, false);
         break;
     case NAVIGATOR_ORIENTATION:
         angle = navigator_event_get_orientation_angle(event);
-
+#if 0
         int angle_diff = abs(angle - this->hidden->angle);
         int newsize[2] = {this->hidden->w, this->hidden->h};
 
@@ -720,11 +720,16 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
         }
 
         SDL_PrivateResize(newsize[0], newsize[1]);
+#endif
         navigator_done_orientation(event);
         break;
     case NAVIGATOR_BACK:
         break;
     case NAVIGATOR_WINDOW_ACTIVE:
+        angle = 90;
+        screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_ROTATION, &angle);
+        navigator_set_orientation(NAVIGATOR_RIGHT_UP, NULL);
+        navigator_set_orientation_mode(NAVIGATOR_LANDSCAPE, NULL);
         break;
     case NAVIGATOR_WINDOW_INACTIVE:
         break;
@@ -842,15 +847,11 @@ PLAYBOOK_PumpEvents(SDL_VideoDevice *this)
             return;
         }
         if(!event) {
-            tco_handle_events(this->hidden->tco_context,
-                              this->hidden->screenWindow,
-                              event);
+            tco_handle_events(this->hidden->tco_context, this->hidden->screenWindow, event);
             return;
         }
 
-        int result = tco_handle_events(this->hidden->tco_context,
-                                       this->hidden->screenWindow,
-                                       event);
+        int result = tco_handle_events(this->hidden->tco_context, this->hidden->screenWindow, event);
         switch(result) {
         case TCO_SUCCESS:
             /* TCO handled the event */

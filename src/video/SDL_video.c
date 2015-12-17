@@ -725,17 +725,17 @@ SDL_Surface * SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags)
 		SDL_ClearSurface(mode);
 
 		/* Now adjust the offsets to match the desired mode */
-		video->offset_x = (mode->w-width)/2;
-		video->offset_y = (mode->h-height)/2;
+		//video->offset_x = (mode->w-width)/2;
+		//video->offset_y = (mode->h-height)/2;
 		mode->offset = video->offset_y*mode->pitch +
 				video->offset_x*mode->format->BytesPerPixel;
-#ifdef DEBUG_VIDEO
+//#ifdef DEBUG_VIDEO
   fprintf(stderr,
 	"Requested mode: %dx%dx%d, obtained mode %dx%dx%d (offset %d)\n",
 		width, height, bpp,
 		mode->w, mode->h, mode->format->BitsPerPixel, mode->offset);
   fflush(stderr);
-#endif
+//#endif
 		mode->w = width;
 		mode->h = height;
 		SDL_SetClipRect(mode, NULL);

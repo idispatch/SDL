@@ -103,6 +103,7 @@ static SDL_VideoDevice *PLAYBOOK_CreateDevice(int devindex)
     if ( device ) {
         SDL_memset(device, 0, (sizeof *device));
         device->hidden = (struct SDL_PrivateVideoData *)(device+1);
+        SDL_memset(device->hidden, 0, sizeof(struct SDL_PrivateVideoData));
     } else {
         SDL_OutOfMemory();
         return(0);
@@ -145,8 +146,10 @@ static SDL_VideoDevice *PLAYBOOK_CreateDevice(int devindex)
 }
 
 VideoBootStrap PLAYBOOK_bootstrap = {
-    PLAYBOOKVID_DRIVER_NAME, "SDL PlayBook (libscreen) video driver",
-    PLAYBOOK_Available, PLAYBOOK_CreateDevice
+    PLAYBOOKVID_DRIVER_NAME,
+    "SDL PlayBook (libscreen) video driver",
+    PLAYBOOK_Available,
+    PLAYBOOK_CreateDevice
 };
 
 int PLAYBOOK_8Bit_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
@@ -197,14 +200,14 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != bps_initialize()) {
+    if (bps_initialize() != BPS_SUCCESS) {
         SDL_SetError("Cannot initialize BPS library: %s", strerror(errno));
         screen_destroy_event(this->hidden->screenEvent);
         screen_destroy_context(this->hidden->screenContext);
         return -1;
     }
 
-    if (BPS_SUCCESS != navigator_rotation_lock(getenv("AUTO_ORIENTATION") != NULL ? false : true)) {
+    if (navigator_rotation_lock(true) != BPS_SUCCESS) {
         SDL_SetError("Cannot set rotation lock: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
@@ -212,7 +215,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != navigator_extend_timeout(120000, 0)) {
+    if (navigator_extend_timeout(60000, 0) != BPS_SUCCESS) {
         SDL_SetError("Cannot extend timeout: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
@@ -220,7 +223,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != navigator_request_events(0)) {
+    if (navigator_request_events(0) != BPS_SUCCESS) {
         SDL_SetError("Cannot get navigator events: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
@@ -228,7 +231,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != screen_request_events(this->hidden->screenContext)) {
+    if (screen_request_events(this->hidden->screenContext) != BPS_SUCCESS) {
         SDL_SetError("Cannot get screen events: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
@@ -236,7 +239,7 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (BPS_SUCCESS != virtualkeyboard_request_events(0)) {
+    if (virtualkeyboard_request_events(0) != BPS_SUCCESS) {
         SDL_SetError("Cannot get VKB events: %s", strerror(errno));
         bps_shutdown();
         screen_destroy_event(this->hidden->screenEvent);
@@ -244,7 +247,9 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    rc = screen_get_context_property_iv(this->hidden->screenContext, SCREEN_PROPERTY_DISPLAY_COUNT, &displayCount);
+    rc = screen_get_context_property_iv(this->hidden->screenContext,
+                                        SCREEN_PROPERTY_DISPLAY_COUNT,
+                                        &displayCount);
     if (rc || displayCount <= 0) {
         SDL_SetError("Cannot get display count: %s", strerror(errno));
         screen_stop_events(this->hidden->screenContext);
@@ -275,36 +280,15 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         return -1;
     }
 
-    if (getenv("WIDTH") != NULL && getenv("HEIGHT") != NULL) {
-         screenResolution[0] = atoi(getenv("WIDTH"));
-         screenResolution[1] = atoi(getenv("HEIGHT"));
-    } else {
-        rc = screen_get_display_property_iv(displays[0],
-                                            SCREEN_PROPERTY_NATIVE_RESOLUTION,
-                                            screenResolution);
-        if (rc) {
-            SDL_SetError("Cannot get native resolution: %s", strerror(errno));
-            SDL_free(displays);
-            screen_stop_events(this->hidden->screenContext);
-            screen_destroy_event(this->hidden->screenEvent);
-            screen_destroy_context(this->hidden->screenContext);
-            bps_shutdown();
-            return -1;
-        }
-    }
-
-    // Hack for PlayBook to avoid rotation issues.
-    if (screenResolution[0] == 600 && screenResolution[1] == 1024) {
-        int angle = 0;
-        char *orientation = getenv("ORIENTATION");
-        if (orientation) {
-             fprintf(stderr, "Received orientation: %s\n", orientation);
-             angle = atoi(orientation);
-             if (angle == 0) {
-                 screenResolution[0] = 1024;
-                 screenResolution[1] = 600;
-             }
-        }
+    rc = screen_get_display_property_iv(displays[0], SCREEN_PROPERTY_NATIVE_RESOLUTION, screenResolution);
+    if (rc) {
+        SDL_SetError("Cannot get native resolution: %s", strerror(errno));
+        SDL_free(displays);
+        screen_stop_events(this->hidden->screenContext);
+        screen_destroy_event(this->hidden->screenEvent);
+        screen_destroy_context(this->hidden->screenContext);
+        bps_shutdown();
+        return -1;
     }
 
     rc = screen_create_window(&this->hidden->mainWindow, this->hidden->screenContext);
@@ -317,6 +301,14 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
         bps_shutdown();
         return -1;
     }
+
+    int maximum = max(screenResolution[0], screenResolution[1]);
+    int minimum = min(screenResolution[0], screenResolution[1]);
+
+    screenResolution[0] = maximum;
+    screenResolution[1] = minimum;
+
+    rc = screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_SIZE, screenResolution);
 
     char groupName[256];
     snprintf(groupName, 256, "SDL-window-%d", getpid());
@@ -340,15 +332,19 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
     this->hidden->eglInfo.eglContext = 0;
     this->hidden->eglInfo.eglSurface = 0;
 
-    for ( i=0; i<SDL_NUMMODES; ++i ) {
-        this->hidden->SDL_modelist[i] = SDL_malloc(sizeof(SDL_Rect));
-        this->hidden->SDL_modelist[i]->x = this->hidden->SDL_modelist[i]->y = 0;
+    for ( i=0; i < SDL_NUMMODES; ++i ) {
+        this->hidden->SDL_modelist[i] = NULL;
     }
 
-    i = 0;
+    this->hidden->SDL_modelist[0] = SDL_malloc(sizeof(SDL_Rect));
 
-    this->hidden->SDL_modelist[i]->w = screenResolution[0];
-    this->hidden->SDL_modelist[i++]->h = screenResolution[1];
+    //this->hidden->SDL_modelist[i]->w = 960;
+    //this->hidden->SDL_modelist[i++]->h = 600;
+    this->hidden->SDL_modelist[0]->x = 0;
+    this->hidden->SDL_modelist[0]->y = 0;
+    this->hidden->SDL_modelist[0]->w = screenResolution[0];
+    this->hidden->SDL_modelist[0]->h = screenResolution[1];
+
 #if 0
     this->hidden->SDL_modelist[i]->w = 720;
     this->hidden->SDL_modelist[i++]->h = 720;
@@ -364,9 +360,9 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
 
     this->hidden->SDL_modelist[i]->w = 1440;
     this->hidden->SDL_modelist[i++]->h = 1440;
-#endif
     /* Sentinel (no screen) */
     this->hidden->SDL_modelist[i] = NULL;
+#endif
 
     /* Determine the screen depth (use default 32-bit depth) */
     vformat->BitsPerPixel = 32;
@@ -453,16 +449,11 @@ screen_window_t PLAYBOOK_CreateWindow(SDL_VideoDevice *this, SDL_Surface *curren
 SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
                 int width, int height, int bpp, Uint32 flags)
 {
-#ifdef _DEBUG
     fprintf(stderr, "SetVideoMode: %dx%d %dbpp\n", width, height, bpp);
-#endif
-    if (width == 640 && height == 400) {
-        this->hidden->eventYOffset = 40;
-        height = 480;
-    }
     if (flags & SDL_OPENGL) {
         return PLAYBOOK_SetVideoMode_GL(this, current, width, height, bpp, flags);
     }
+
     screen_window_t screenWindow = PLAYBOOK_CreateWindow(this, current, width, height, bpp);
     if (screenWindow == NULL)
         return NULL;
@@ -471,7 +462,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     int format = 0;
 
     int sizeOfWindow[2];
-#ifdef __STRETCHED_VIDEO_SCREEN__
+#if __STRETCHED_VIDEO_SCREEN__
     rc = screen_get_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
     if (rc) {
         SDL_SetError("Cannot get resolution: %s", strerror(errno));
@@ -512,13 +503,13 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     }
 #endif
 
-
-#ifdef __STRETCHED_VIDEO_SCREEN__
+#if __STRETCHED_VIDEO_SCREEN__
     int sizeOfBuffer[2] = {width, height};
 #else
     int sizeOfBuffer[2] = {sizeOfWindow[0], sizeOfWindow[1]};
 #endif
 
+    fprintf(stderr, "Setting window buffer size: %dx%d\n", sizeOfBuffer[0], sizeOfBuffer[1]);
     rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_BUFFER_SIZE, sizeOfBuffer);
     if (rc) {
         SDL_SetError("Cannot resize window buffer: %s", strerror(errno));
@@ -541,6 +532,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
         format = SCREEN_FORMAT_RGBX8888;
         break;
     }
+
     rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_FORMAT, &format);
     if (rc) {
         SDL_SetError("Cannot set window format: %s", strerror(errno));
@@ -561,6 +553,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     if (orientation) {
          angle = atoi(orientation);
     }
+
     rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
     if (rc) {
         SDL_SetError("Cannot set window rotation: %s", strerror(errno));
@@ -612,7 +605,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     current->flags &= ~SDL_RESIZABLE; /* no resize for Direct Context */
     current->flags |= SDL_FULLSCREEN;
     current->flags |= SDL_HWSURFACE;
-#ifdef __STRETCHED_VIDEO_SCREEN__
+#if __STRETCHED_VIDEO_SCREEN__
     current->w = width;
     current->h = height;
 #else
@@ -627,17 +620,21 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
 
 void PLAYBOOK_UpdateRects(SDL_VideoDevice *this, int numrects, SDL_Rect *rects)
 {
-    static int dirtyRects[256*4];
+    int dirtyRects[256*4];
     int index = 0, i = 0;
-    for (i=0; i<numrects; i++) {
-        dirtyRects[index] = rects[i].x;
+    for (i = 0; i < min(numrects, 256); i++) {
+        dirtyRects[index]   = rects[i].x;
         dirtyRects[index+1] = rects[i].y;
         dirtyRects[index+2] = rects[i].x + rects[i].w;
         dirtyRects[index+3] = rects[i].y + rects[i].h;
         index += 4;
     }
 
-    screen_post_window(this->hidden->screenWindow, this->hidden->frontBuffer, numrects, dirtyRects, 0);
+    screen_post_window(this->hidden->screenWindow,
+                       this->hidden->frontBuffer,
+                       numrects,
+                       dirtyRects,
+                       0);
 }
 
 int PLAYBOOK_SetColors(SDL_VideoDevice *this, int firstcolor, int ncolors, SDL_Color *colors)

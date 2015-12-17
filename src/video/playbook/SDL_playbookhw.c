@@ -27,7 +27,7 @@ int PLAYBOOK_AllocHWSurface(SDL_VideoDevice *device, SDL_Surface *surface)
         return -1;
     }
 
-    int rc = screen_create_pixmap( &surface->hwdata->pixmap, device->hidden->screenContext);
+    int rc = screen_create_pixmap(&surface->hwdata->pixmap, device->hidden->screenContext);
     if (rc) {
         fprintf(stderr, "Failed to create HW surface: screen_create_pixmap returned %s\n", strerror(errno));
         goto fail1;
@@ -96,8 +96,7 @@ int PLAYBOOK_FlipHWSurface(SDL_VideoDevice *device, SDL_Surface *surface)
     int result = screen_post_window(device->hidden->screenWindow, surface->hwdata->front, 1, fullRect, 0);
 
     screen_buffer_t windowBuffer[2];
-    int rc = screen_get_window_property_pv(device->hidden->screenWindow,
-            SCREEN_PROPERTY_RENDER_BUFFERS, (void**)&windowBuffer);
+    int rc = screen_get_window_property_pv(device->hidden->screenWindow, SCREEN_PROPERTY_RENDER_BUFFERS, (void**)&windowBuffer);
     if (rc) {
         SDL_SetError("Cannot get window render buffers: %s", strerror(errno));
         return NULL;
@@ -117,11 +116,11 @@ int PLAYBOOK_FillHWRect(SDL_VideoDevice *device, SDL_Surface *dst, SDL_Rect *rec
 {
     if (dst->flags & SDL_HWSURFACE) {
         int attribs[] = {SCREEN_BLIT_DESTINATION_X, rect->x,
-                        SCREEN_BLIT_DESTINATION_Y, rect->y,
-                        SCREEN_BLIT_DESTINATION_WIDTH, rect->w,
-                        SCREEN_BLIT_DESTINATION_HEIGHT, rect->h,
-                        SCREEN_BLIT_COLOR, color,
-                        SCREEN_BLIT_END};
+                         SCREEN_BLIT_DESTINATION_Y, rect->y,
+                         SCREEN_BLIT_DESTINATION_WIDTH, rect->w,
+                         SCREEN_BLIT_DESTINATION_HEIGHT, rect->h,
+                         SCREEN_BLIT_COLOR, color,
+                         SCREEN_BLIT_END};
         screen_fill(device->hidden->screenContext, device->hidden->frontBuffer, attribs);
     }
     return 0;
