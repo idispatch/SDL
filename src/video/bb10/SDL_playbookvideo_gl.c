@@ -16,8 +16,6 @@
 #include <bps/bps.h>
 #include <bps/screen.h>
 #include <bps/event.h>
-#include <bps/orientation.h>
-#include <bps/navigator.h>
 
 #include "touchcontroloverlay.h"
 
@@ -158,15 +156,13 @@ SDL_Surface *PLAYBOOK_SetVideoMode_GL(SDL_VideoDevice *this, SDL_Surface *curren
         goto error4;
     }
 
-    int angle = 0;
-    char *orientation = getenv("ORIENTATION");
-    if (orientation) {
-         angle = atoi(orientation);
-    }
-    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
-    if (rc) {
-        SDL_SetError("Cannot set window rotation: %s", strerror(errno));
-        goto error4;
+    if (width != height) {
+        int angle = 90;
+        rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
+        if (rc) {
+            SDL_SetError("Cannot set window rotation: %s", strerror(errno));
+            goto error4;
+        }
     }
 
     rc = screen_create_window_buffers(screenWindow, 2);

@@ -46,7 +46,6 @@
 #include <bps/bps.h>
 #include <bps/screen.h>
 #include <bps/event.h>
-#include <bps/orientation.h>
 #include <bps/navigator.h>
 
 #include <EGL/egl.h>
@@ -338,31 +337,10 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
 
     this->hidden->SDL_modelist[0] = SDL_malloc(sizeof(SDL_Rect));
 
-    //this->hidden->SDL_modelist[i]->w = 960;
-    //this->hidden->SDL_modelist[i++]->h = 600;
     this->hidden->SDL_modelist[0]->x = 0;
     this->hidden->SDL_modelist[0]->y = 0;
     this->hidden->SDL_modelist[0]->w = screenResolution[0];
     this->hidden->SDL_modelist[0]->h = screenResolution[1];
-
-#if 0
-    this->hidden->SDL_modelist[i]->w = 720;
-    this->hidden->SDL_modelist[i++]->h = 720;
-
-    this->hidden->SDL_modelist[i]->w = 1024;
-    this->hidden->SDL_modelist[i++]->h = 600;
-
-    this->hidden->SDL_modelist[i]->w = 1280;
-    this->hidden->SDL_modelist[i++]->h = 720;
-
-    this->hidden->SDL_modelist[i]->w = 1280;
-    this->hidden->SDL_modelist[i++]->h = 768;
-
-    this->hidden->SDL_modelist[i]->w = 1440;
-    this->hidden->SDL_modelist[i++]->h = 1440;
-    /* Sentinel (no screen) */
-    this->hidden->SDL_modelist[i] = NULL;
-#endif
 
     /* Determine the screen depth (use default 32-bit depth) */
     vformat->BitsPerPixel = 32;
@@ -450,6 +428,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
                 int width, int height, int bpp, Uint32 flags)
 {
     fprintf(stderr, "SetVideoMode: %dx%d %dbpp\n", width, height, bpp);
+
     if (flags & SDL_OPENGL) {
         return PLAYBOOK_SetVideoMode_GL(this, current, width, height, bpp, flags);
     }
@@ -462,52 +441,14 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     int format = 0;
 
     int sizeOfWindow[2];
-#if __STRETCHED_VIDEO_SCREEN__
     rc = screen_get_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
     if (rc) {
         SDL_SetError("Cannot get resolution: %s", strerror(errno));
         screen_destroy_window(screenWindow);
         return NULL;
     }
-#else
-    int hwResolution[2];
 
-    rc = screen_get_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, hwResolution);
-    if (rc) {
-        SDL_SetError("Cannot get resolution: %s", strerror(errno));
-        screen_destroy_window(screenWindow);
-        return NULL;
-    }
-
-    float hwRatio, appRatio;
-    hwRatio = (float)hwResolution[0]/(float)hwResolution[1];
-    appRatio = (float)width/(float)height;
-
-    double newResolution[2];
-    if(hwRatio > appRatio){
-        newResolution[0] = ((double)height / ((double)hwResolution[1] / (double)hwResolution[0]));
-        newResolution[1] = (double)height;
-    }else{
-        newResolution[0] = (double)width;
-        newResolution[1] = (((double)hwResolution[1] / (double)hwResolution[0]) * (double)width);
-    }
-
-    sizeOfWindow[0] = (int)(ceil(newResolution[0]));
-    sizeOfWindow[1] = (int)(ceil(newResolution[1]));
-
-    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_SIZE, sizeOfWindow);
-    if (rc) {
-        SDL_SetError("Cannot resize window: %s", strerror(errno));
-        screen_destroy_window(screenWindow);
-        return NULL;
-    }
-#endif
-
-#if __STRETCHED_VIDEO_SCREEN__
-    int sizeOfBuffer[2] = {width, height};
-#else
     int sizeOfBuffer[2] = {sizeOfWindow[0], sizeOfWindow[1]};
-#endif
 
     fprintf(stderr, "Setting window buffer size: %dx%d\n", sizeOfBuffer[0], sizeOfBuffer[1]);
     rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_BUFFER_SIZE, sizeOfBuffer);
@@ -548,16 +489,13 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
         return NULL;
     }
 
-    int angle = 0;
-    char *orientation = getenv("ORIENTATION");
-    if (orientation) {
-         angle = atoi(orientation);
-    }
-
-    rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
-    if (rc) {
-        SDL_SetError("Cannot set window rotation: %s", strerror(errno));
-        return NULL;
+    if (width != height) {
+        int angle = 90;
+        rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_ROTATION, &angle);
+        if (rc) {
+            SDL_SetError("Cannot set window rotation: %s", strerror(errno));
+            return NULL;
+        }
     }
 
     int bufferCount = 1; // FIXME: (flags & SDL_DOUBLEBUF)?2:1; - Currently double-buffered surfaces are slow!
@@ -568,8 +506,7 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     }
 
     screen_buffer_t windowBuffer[bufferCount];
-    rc = screen_get_window_property_pv(screenWindow,
-            SCREEN_PROPERTY_RENDER_BUFFERS, (void**)&windowBuffer);
+    rc = screen_get_window_property_pv(screenWindow, SCREEN_PROPERTY_RENDER_BUFFERS, (void**)&windowBuffer);
     if (rc) {
         SDL_SetError("Cannot get window render buffers: %s", strerror(errno));
         return NULL;
@@ -605,13 +542,8 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     current->flags &= ~SDL_RESIZABLE; /* no resize for Direct Context */
     current->flags |= SDL_FULLSCREEN;
     current->flags |= SDL_HWSURFACE;
-#if __STRETCHED_VIDEO_SCREEN__
-    current->w = width;
-    current->h = height;
-#else
     current->w = sizeOfWindow[0];
     current->h = sizeOfWindow[1];
-#endif
     current->pitch = this->hidden->pitch;
     current->pixels = this->hidden->pixels;
     this->hidden->surface = current;

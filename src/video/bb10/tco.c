@@ -2015,7 +2015,6 @@ bool tco_context_touch_event(tco_context_t ctx,
     int touch_id;
     int pos[2];
     int screenPos[2];
-    int orientation;
     long long timestamp;
     int sequenceId;
     bool handled = false;
@@ -2039,12 +2038,6 @@ bool tco_context_touch_event(tco_context_t ctx,
     }
 
     rc = screen_get_event_property_iv(event, SCREEN_PROPERTY_POSITION, screenPos);
-    if(rc) {
-        DEBUGLOG("screen: %s (%d)", strerror(errno), errno);
-        return false;
-    }
-
-    rc = screen_get_event_property_iv(event, SCREEN_PROPERTY_TOUCH_ORIENTATION, &orientation);
     if(rc) {
         DEBUGLOG("screen: %s (%d)", strerror(errno), errno);
         return false;

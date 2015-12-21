@@ -125,6 +125,4 @@
 
 /* Enable the dummy video driver (src/video/playbook/\*.c) */
 #define SDL_VIDEO_DRIVER_PLAYBOOK	1
-
-#define __STRETCHED_VIDEO_SCREEN__ 1
 #endif /* _SDL_config_playbook_h */

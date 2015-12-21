@@ -698,47 +698,29 @@ static void handleNavigatorEvent(SDL_VideoDevice *this, bps_event_t *event)
     case NAVIGATOR_LOW_MEMORY:
         break;
     case NAVIGATOR_ORIENTATION_CHECK:
+        fprintf(stderr, "NAVIGATOR_ORIENTATION_CHECK:\n");
         navigator_orientation_check_response(event, false);
         // note, will not send NAVIGATOR_ORIENTATION since false
         break;
     case NAVIGATOR_ORIENTATION:
+        // must not be sent
         angle = navigator_event_get_orientation_angle(event);
-#if 0
-        int angle_diff = abs(angle - this->hidden->angle);
-        int newsize[2] = {this->hidden->w, this->hidden->h};
-
-        if(angle_diff == 90 || angle_diff == 270){
-            /* flip */
-            newsize[0] = this->hidden->h;
-            newsize[1] = this->hidden->w;
-        }
-
-        rc  = screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_ROTATION, &angle);
-        rc |= screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_SIZE, newsize);
-        rc |= screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_SOURCE_SIZE, newsize);
-        if(rc){
-            SDL_SetError("Could not set mainWindow size or rotation: %s\n", strerror(errno));
-        }
-
-        SDL_PrivateResize(newsize[0], newsize[1]);
-#endif
+        fprintf(stderr, "NAVIGATOR_ORIENTATION: %d\n", angle);
         navigator_done_orientation(event);
         break;
     case NAVIGATOR_BACK:
         break;
     case NAVIGATOR_WINDOW_ACTIVE:
-        angle = 90;
-        screen_set_window_property_iv(this->hidden->mainWindow, SCREEN_PROPERTY_ROTATION, &angle);
-#if 0
-        navigator_set_orientation(NAVIGATOR_RIGHT_UP, NULL);
-#endif
-        navigator_set_orientation_mode(NAVIGATOR_LANDSCAPE, NULL);
+        fprintf(stderr, "NAVIGATOR_WINDOW_ACTIVE:\n");
         break;
     case NAVIGATOR_WINDOW_INACTIVE:
+        fprintf(stderr, "NAVIGATOR_WINDOW_INACTIVE:\n");
         break;
     case NAVIGATOR_ORIENTATION_DONE:
+        fprintf(stderr, "NAVIGATOR_ORIENTATION_DONE:\n");
         break;
     case NAVIGATOR_ORIENTATION_RESULT:
+        fprintf(stderr, "NAVIGATOR_ORIENTATION_RESULT:\n");
         break;
     case NAVIGATOR_WINDOW_LOCK:
         break;
