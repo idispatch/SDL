@@ -220,17 +220,29 @@ int initialize_touch_controls(SDL_VideoDevice *this, screen_window_t screenWindo
         return TCO_FAILURE;
     }
 
+    fprintf(stderr, "Screen size: %dx%d\n", sizeOfWindow[0], sizeOfWindow[1]);
+
+    int maximum = max(sizeOfWindow[0], sizeOfWindow[1]);
+    int minimum = min(sizeOfWindow[0], sizeOfWindow[1]);
+
+    fprintf(stderr, "Normalized screen size: %dx%d\n", maximum, minimum);
+
     char controlsFileName[128];
     snprintf(controlsFileName,
              sizeof(controlsFileName),
-             "app/native/controls-%dx%d.json", sizeOfWindow[0], sizeOfWindow[1]);
+             "app/native/controls-%dx%d.json", maximum, minimum);
+
     char userControlsFileName[128];
     snprintf(userControlsFileName,
              sizeof(userControlsFileName),
-             "data/controls-%dx%d.json", sizeOfWindow[0], sizeOfWindow[1]);
+             "data/controls-%dx%d.json", maximum, minimum);
+
     if(tco_initialize(&this->hidden->tco_context,
                       this->hidden->screenContext,
                       callbacks) == TCO_SUCCESS) {
+
+        fprintf(stderr, "Loading control files: %s, %s\n", controlsFileName, userControlsFileName);
+
         if (tco_loadcontrols(this->hidden->tco_context,
                              controlsFileName,
                              userControlsFileName) == TCO_SUCCESS) {

@@ -448,7 +448,9 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
         return NULL;
     }
 
-    int sizeOfBuffer[2] = {sizeOfWindow[0], sizeOfWindow[1]};
+    fprintf(stderr, "Size of window: %dx%d\n", sizeOfWindow[0], sizeOfWindow[1]);
+
+    int sizeOfBuffer[2] = { width, height };
 
     fprintf(stderr, "Setting window buffer size: %dx%d\n", sizeOfBuffer[0], sizeOfBuffer[1]);
     rc = screen_set_window_property_iv(screenWindow, SCREEN_PROPERTY_BUFFER_SIZE, sizeOfBuffer);
@@ -542,8 +544,8 @@ SDL_Surface *PLAYBOOK_SetVideoMode(SDL_VideoDevice *this, SDL_Surface *current,
     current->flags &= ~SDL_RESIZABLE; /* no resize for Direct Context */
     current->flags |= SDL_FULLSCREEN;
     current->flags |= SDL_HWSURFACE;
-    current->w = sizeOfWindow[0];
-    current->h = sizeOfWindow[1];
+    current->w = width;
+    current->h = height;
     current->pitch = this->hidden->pitch;
     current->pixels = this->hidden->pixels;
     this->hidden->surface = current;
