@@ -339,8 +339,8 @@ int PLAYBOOK_VideoInit(SDL_VideoDevice *this, SDL_PixelFormat *vformat)
 
     this->hidden->SDL_modelist[0]->x = 0;
     this->hidden->SDL_modelist[0]->y = 0;
-    this->hidden->SDL_modelist[0]->w = screenResolution[0];
-    this->hidden->SDL_modelist[0]->h = screenResolution[1];
+    this->hidden->SDL_modelist[0]->w = 640;//screenResolution[0];
+    this->hidden->SDL_modelist[0]->h = 480;//screenResolution[1];
 
     /* Determine the screen depth (use default 32-bit depth) */
     vformat->BitsPerPixel = 32;
